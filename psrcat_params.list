@@ -1,0 +1,20 @@
+#Please list parameters as in psrcat. Refer to https://www.atnf.csiro.au/research/pulsar/psrcat/psrcat_help.html?type=expert#par_list for the complete list. 
+#List of parameters used by the classifier. 
+jname
+bname
+raj
+decj
+p0
+p1
+f0
+f1
+dm
+rm
+pb
+bincomp
+dist
+assoc
+nglt
+age
+bsurf
+edot

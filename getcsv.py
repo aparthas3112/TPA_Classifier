@@ -26,6 +26,17 @@ else:
 
     query = QueryATNF(psrs=psrlist,params=psrcat_params)
 
+    #Saving the entire catalogue too
+    df_cat = query.catalogue
+    df_cat = df_cat[['JNAME','BNAME','RAJ','RAJ_ERR','DECJ','DECJ_ERR','F0','F0_ERR','F1','F1_ERR','P0','P0_ERR',
+    'P1','P1_ERR','DM','DM_ERR','RM','RM_ERR','DIST','ASSOC','PB','PB_ERR','BINCOMP','AGE',
+    'BSURF','EDOT','NGLT']]
+    #Removing TPA pulsars from the full catalogue pickle file
+    indices = df_cat[df_cat["JNAME"].isin(psrlist)].index
+    df_cat.drop(indices,inplace=True)
+    if args.save:
+        df_cat.to_pickle(args.save+"_fullcat.pckl")
+
     df = query.pandas
     #Rearranging the dataframe columns
     df = df[['JNAME','BNAME','RAJ','RAJ_ERR','DECJ','DECJ_ERR','F0','F0_ERR','F1','F1_ERR','P0','P0_ERR',
@@ -51,3 +62,4 @@ else:
         df.to_csv(args.save+".csv",index=False)
 
 print df
+

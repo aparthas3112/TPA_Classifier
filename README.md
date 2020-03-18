@@ -3,8 +3,8 @@ Interactive web-based classifier for TPA pulsars observed with the MeerKAT radio
 
 ## getcsv.py
 ```
-usage: classifier_getcsv.py [-h] [-psrlist PSRLIST] [-psrcat PSRCAT_PARAMS]
-                            [-custom CUSTOM_PARAMS] [-save SAVE] [-load LOAD]
+usage: getcsv.py [-h] [-psrlist PSRLIST] [-psrcat PSRCAT_PARAMS]
+                 [-custom CUSTOM_PARAMS] [-save SAVE] [-load LOAD]
 
 Generate CSV for TPA Classifier
 
@@ -19,12 +19,16 @@ optional arguments:
   -load LOAD            Load previous query into dataframe
  ```
   
-`classifier_getcsv.py` is used to generate a dataframe that contains values for a set of psrcat parameters and the custom values for pulsar parameters measured with the MeerTIME data. 
+`getcsv.py` is used to generate a dataframe that contains values for a set of psrcat parameters and the custom values for pulsar parameters measured with the MeerTIME data. 
+
+Example usage for `getcsv.py`:
+`python getcsv.py -psrlist tpa_psrs.list -psrcat psrcat_params.list -custom custom_params.list -save saved_queries/classifier` 
+
  
  ## todataframe.py
  ```
- usage: gsheet_dataframe.py [-h] [-sheetid SHEETID] [-sheetname SHEETNAME]
-                           [-save SAVE]
+ usage: todataframe.py [-h] [-sheetid SHEETID] [-sheetname SHEETNAME]
+                      [-save SAVE]
 
 Generate dataframe from Google sheet (TPA Classifier)
 
@@ -35,6 +39,8 @@ optional arguments:
   -save SAVE            Path and filename to save the downloaded GSheet as a
                         pckl
 ```
-`gsheet_dataframe.py` is used to pull a gsheet from a URL and convert that to a dataframe that is then used by the classifier.                         
+`todataframe.py` is used to pull a gsheet from a URL and convert that to a dataframe that is then used by the classifier.                    
+Example usage for `todataframe.py`:
+`python todataframe.py -sheetid <sheetID> -sheetname <sheetName> -save fromGoogleSheets/classifier_gsheet`
                        
                      

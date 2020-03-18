@@ -57,7 +57,7 @@ This loads the downloaded google spreadsheet and the full catalogue pickle file 
 If you are running this directly on a local machine, then just open up the URL in a browser. If you are instead running this inside a virtual instance, for example, like a docker container, then you need to forward the ports. This is dependent on the virtual instance. 
 
 Using with `MeerDock`: If you are running this inside `MeerDock`, then just run, 
-`ssh psr@localhost -p 2222 -L 5006:localhost:5006` and go to `localhost:5006` in a browser on your local machine. 
+`ssh psr@localhost -p 2222 -L 5006:localhost:5006` (locally) and go to `localhost:5006` in a browser on your local machine. 
 
                 
                 

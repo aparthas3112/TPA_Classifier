@@ -45,6 +45,9 @@ optional arguments:
 Example usage for `todataframe.py`:
 `python todataframe.py -sheetid <sheetID> -sheetname <sheetName> -save fromGoogleSheets/classifier_gsheet`
 
+If the URL for the spreadsheet is the following: 
+`https://docs.google.com/spreadsheets/d/1THISISFAKEShcQpBP7R3DzZaRWan3MCTWGpjc-0fRANDOM!urhg/edit#gid=0`, then the `sheetID` is `1THISISFAKEShcQpBP7R3DzZaRWan3MCTWGpjc-0fRANDOM!urhg` and the `sheetName` is the title of the spreadsheet. 
+
 This will download the relevant Google spreadsheet and convert it into a pickle format, which will be then used by the classifier. 
 
 ## classifier.py

@@ -1,7 +1,7 @@
 # TPA_Classifier
 Interactive web-based classifier for TPA pulsars observed with the MeerKAT radio telescope as part of MeerTime
 
-## classifier_getcsv.py
+## getcsv.py
 ```
 usage: classifier_getcsv.py [-h] [-psrlist PSRLIST] [-psrcat PSRCAT_PARAMS]
                             [-custom CUSTOM_PARAMS] [-save SAVE] [-load LOAD]
@@ -21,7 +21,7 @@ optional arguments:
   
 `classifier_getcsv.py` is used to generate a dataframe that contains values for a set of psrcat parameters and the custom values for pulsar parameters measured with the MeerTIME data. 
  
- ## gsheet_dataframe.py
+ ## todataframe.py
  ```
  usage: gsheet_dataframe.py [-h] [-sheetid SHEETID] [-sheetname SHEETNAME]
                            [-save SAVE]

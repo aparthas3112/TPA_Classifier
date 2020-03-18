@@ -35,11 +35,13 @@ df = pd.read_pickle(str(args.load_pickle))
 df_cat = pd.read_pickle(str(args.psrcat))
 df_cat["color"] = "#7f8c8d"
 df_cat["alpha"] = 0.6
+df_cat["size"] = 7
 
 
 #Set color and alpha
 df["color"] = np.where(df["DM"] > 0, "#3498db", "grey")
 df["alpha"] = np.where(df["DM"] > 0, 0.9, 0.25)
+df['size'] = np.where(df["DM"] > 0, 9, 5)
 
 #Replacing empty,NAN cells
 df["ASSOC"].fillna("NA",inplace=True)
@@ -147,8 +149,6 @@ source = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
 TOOLS = 'pan,wheel_zoom,xbox_select,box_zoom,lasso_select,undo,redo,save,reset'
 TOOLTIPS=[
     ("JNAME","@JNAME"),
-    ("RAJ", "@RAJ"),
-    ("DECJ", "@DECJ"),
     ("P0", "@P0"),
     ("P1", "@P1"),
     ("DM", "@DM"),
@@ -160,7 +160,7 @@ TOOLTIPS=[
 
 p = figure(plot_height=1000, plot_width=900, title="", tooltips=TOOLTIPS, sizing_mode="scale_both",y_axis_type="log",
            x_axis_type="log",tools=TOOLS)
-p.circle(x="P0", y="P1", source=source, size=7, color="color", line_color=None, fill_alpha="alpha")
+p.circle(x="P0", y="P1", source=source, size='size', color="color", line_color=None, fill_alpha="alpha")
 
 
 def mapper(value):
@@ -242,7 +242,7 @@ def select_movies():
         selected = selected[selected['CATEGORY'].str.contains(time_key,na=False)]
 
 
-    print profile_key,pol_key,freq_key,time_key
+    #print profile_key,pol_key,freq_key,time_key
 
     conv_f1 = -10**(F1.value)
     conv_age = 10**(AGE.value)
@@ -281,6 +281,7 @@ def source_data(dataframe):
         P1=df["P1"],
         color=df["color"],
         alpha=df["alpha"],
+        size=df["size"],
         JNAME=df["JNAME"],
         BNAME=df["BNAME"],
         RAJ=df["RAJ"],

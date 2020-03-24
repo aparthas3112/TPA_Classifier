@@ -1,3 +1,2 @@
-J0045-7319,aparthas,Teaosdmacommsaetsaasdaasdasdads,PROFILE:DoublePeak;POLARIZATION:PASwing;FREQUENCY:FreqProfileEvol+Scintillation;TIME:Nulling+Drifting 
-J0045-7319,simon,Teaosdmacommsaetsaasdaasdasdads,PROFILE:DoublePeak;POLARIZATION:PASwing;FREQUENCY:FreqProfileEvol+Scintillation;TIME:Nulling+Drifting 
-
+J0038-2501,aparthas,,PROFILE:Symmetric+Wide;POLARIZATION:NotSure;FREQUENCY:NotSure;TIME:Stable;OBSERVATION:NeedMore+MediumSN 
+J0045-7042,aparthas,PAnotclear,PROFILE:Gaussian+Symmetric;POLARIZATION:FreqDependent;FREQUENCY:NotSure;TIME:Stable+NotSure;OBSERVATION:LowSN 

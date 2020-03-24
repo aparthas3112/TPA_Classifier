@@ -19,7 +19,7 @@ import pandas as pd
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, layout, row
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, CheckboxButtonGroup, TextInput, TextAreaInput
+from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, CheckboxButtonGroup, TextInput, TextAreaInput, Paragraph
 from bokeh.plotting import figure
 
 import argparse
@@ -63,13 +63,14 @@ p.xaxis.visible = None
 p.yaxis.visible = None
 p.xgrid.grid_line_color = None
 p.ygrid.grid_line_color = None
-status = PreText(text="",width=400)
+status = Paragraph(text="",width=900,height=100)
 tags_text = PreText(text="", width=400)
 
-profile_tags = CheckboxButtonGroup(labels=tags["PROFILE"],active=[])
+profile_tags = CheckboxButtonGroup(labels=tags["PROFILE"],active=[],width=800)
 pol_tags = CheckboxButtonGroup(labels=tags["POLARIZATION"],active=[])
 freq_tags = CheckboxButtonGroup(labels=tags["FREQUENCY"],active=[])
 time_tags = CheckboxButtonGroup(labels=tags["TIME"],active=[])
+observation_tags = CheckboxButtonGroup(labels=tags["OBSERVATION"],active=[])
 apply_tags = Button(label="Apply tags", button_type="success")
 save = Button(label="Save tags", button_type="success")
 comments = TextAreaInput(value="",title="User comments",rows=6)
@@ -108,6 +109,25 @@ def capture_screenshot(url):
     driver.close()
     return save_path
 
+def check_classification_history(psr):
+    #Checking if pulsar already classified
+    classified_list_path = "/home/psr/TPA/TPA_Classifier/measured_parameters/category.list"
+    if os.path.exists(classified_list_path):
+        category=[]
+        comments=[]
+        users=[]
+        f = open(classified_list_path,'r')
+        for line in f:
+            sline = line.split(',')
+            if sline[0] == psr:
+                category.append(sline[-1].rstrip())
+                comments.append(sline[2].rstrip())
+                users.append(sline[1].rstrip())
+        status.text = "Already classified.\n{0}\n{1}\n{2}".format(category,comments,users)
+
+    else:
+        pass
+
 def convert_image(save_path):
     if os.path.exists(save_path):
         status.text = "Converting image to RGBA vector."
@@ -137,6 +157,7 @@ def update():
         rgba_array = convert_image(save_path)
         status.text = "Success. Displaying plot below."
         source.data=dict(rgba=[rgba_array])
+        check_classification_history(selected_psr)
     else:
         status.text = "Please enter username to proceed."
 
@@ -145,11 +166,14 @@ def update_text():
     pol_inds = pol_tags.active
     freq_inds = freq_tags.active
     time_inds = time_tags.active
+    observation_inds = observation_tags.active
 
     profile_vals = [tags["PROFILE"][i] for i in profile_inds]
     pol_vals = [tags["POLARIZATION"][i] for i in pol_inds]
     freq_vals = [tags["FREQUENCY"][i] for i in freq_inds]
     time_vals = [tags["TIME"][i] for i in time_inds]
+    observation_vals = [tags["OBSERVATION"][i] for i in observation_inds]
+
     comments_vals = comments.value
 
     tags_text.text = """
@@ -157,7 +181,8 @@ def update_text():
     POLARIZATION:{1}
     FREQUENCY:{2}
     TIME:{3}
-    COMMENTS:{4}""".format(profile_vals,pol_vals,freq_vals,time_vals,comments_vals)
+    OBSERVATION:{4}
+    COMMENTS:{5}""".format(profile_vals,pol_vals,freq_vals,time_vals,observation_vals,comments_vals)
 
 
 def update_save():
@@ -165,16 +190,19 @@ def update_save():
     pol_inds = pol_tags.active
     freq_inds = freq_tags.active
     time_inds = time_tags.active
+    observation_inds = observation_tags.active
 
     profile_vals = [tags["PROFILE"][i].rstrip() for i in profile_inds]
     pol_vals = [tags["POLARIZATION"][i].rstrip() for i in pol_inds]
     freq_vals = [tags["FREQUENCY"][i].rstrip() for i in freq_inds]
     time_vals = [tags["TIME"][i].rstrip() for i in time_inds]
+    observation_vals = [tags["OBSERVATION"][i] for i in observation_inds]
 
     profile_vals = "+".join(profile_vals)
     pol_vals = "+".join(pol_vals)
     freq_vals = "+".join(freq_vals)
     time_vals = "+".join(time_vals)
+    observation_vals = "+".join(observation_vals)
 
     url = get_url(psr_select.value)
     psrname = os.path.split(url)[-1].split(".html")[0]
@@ -182,7 +210,7 @@ def update_save():
     comments_str = comments.value
     comments_str = ''.join(e for e in comments_str if e.isalnum())
 
-    category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3}".format(profile_vals,pol_vals,freq_vals,time_vals)
+    category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3};OBSERVATION:{4}".format(profile_vals,pol_vals,freq_vals,time_vals,observation_vals)
 
     with open ("/home/psr/TPA/TPA_Classifier/measured_parameters/category.list","a") as f:
         f.write("{0},{1},{2},{3} \n".format(psrname,username_str.rstrip(),comments_str.rstrip(),category))
@@ -192,21 +220,21 @@ def update_save():
 #Setting up the web layout
 psr_select.on_change('value',lambda attr, old, new: update())
 
-select_status = row(psr_select,status,username)
+select_status = row(psr_select,username,status)
 inputs_webshot = column(select_status,p)
 
 apply_tags.on_click(update_text)
 save.on_click(update_save)
 apply_save_row = row(apply_tags,save)
 
-tags_column = column(profile_tags,pol_tags,freq_tags,time_tags)
+tags_column = column(profile_tags,pol_tags,freq_tags,time_tags,observation_tags)
 tags_buttons = column(tags_column,apply_save_row)
 
 
 l = layout([
     [inputs_webshot],
     [tags_buttons,comments,tags_text],
-],sizing_mode='fixed')
+],sizing_mode='scale_width')
 
 update()  # initial load of the data
 

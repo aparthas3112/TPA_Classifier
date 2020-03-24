@@ -5,4 +5,4 @@ rm_file = /home/psr/TPA/TPA_Classifier/measured_parameters/rm.list
 dm_file = /home/psr/TPA/TPA_Classifier/measured_parameters/dm.list
 w50_file = /home/psr/TPA/TPA_Classifier/measured_parameters/w50.list
 w10_file = /home/psr/TPA/TPA_Classifier/measured_parameters/w10.list
-category_file = /home/psr/TPA/TPA_Classifier/measured_parameters/categorization.listmeasured_parameters
+category_file = /home/psr/TPA/TPA_Classifier/measured_parameters/category.list

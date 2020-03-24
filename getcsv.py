@@ -52,8 +52,13 @@ else:
         fname = file[0]
         fpath = file[-1]
 
-        colname = fname.split("_")[0]+"_MK"
-        custom_df = pd.read_csv(fpath,sep=" ",names=['JNAME',colname],comment="#")
+        if not fname == "category_file":
+            colname = fname.split("_")[0]+"_MK"
+            custom_df = pd.read_csv(fpath,sep=" ",names=['JNAME',colname],comment="#")
+        else:
+            colname = fname.split("_")[0]
+            custom_df = pd.read_csv(fpath,sep=',',names=["JNAME","USER","COMMENTS","CATEGORY"],comment="#")
+            print custom_df
 
         df = pd.merge(df,custom_df,on='JNAME',how='outer')
 

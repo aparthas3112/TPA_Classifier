@@ -166,19 +166,26 @@ def update_save():
     freq_inds = freq_tags.active
     time_inds = time_tags.active
 
-    profile_vals = [tags["PROFILE"][i] for i in profile_inds]
-    pol_vals = [tags["POLARIZATION"][i] for i in pol_inds]
-    freq_vals = [tags["FREQUENCY"][i] for i in freq_inds]
-    time_vals = [tags["TIME"][i] for i in time_inds]
+    profile_vals = [tags["PROFILE"][i].rstrip() for i in profile_inds]
+    pol_vals = [tags["POLARIZATION"][i].rstrip() for i in pol_inds]
+    freq_vals = [tags["FREQUENCY"][i].rstrip() for i in freq_inds]
+    time_vals = [tags["TIME"][i].rstrip() for i in time_inds]
+
+    profile_vals = "+".join(profile_vals)
+    pol_vals = "+".join(pol_vals)
+    freq_vals = "+".join(freq_vals)
+    time_vals = "+".join(time_vals)
 
     url = get_url(psr_select.value)
     psrname = os.path.split(url)[-1].split(".html")[0]
     username_str = username.value
     comments_str = comments.value
+    comments_str = ''.join(e for e in comments_str if e.isalnum())
+
     category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3}".format(profile_vals,pol_vals,freq_vals,time_vals)
 
-    with open ("/home/psr/TPA/TPA_Classifier/measured_parameters/categorization.list","a") as f:
-        f.write("{0},{1},{2},{3} \n".format(psrname,username_str,comments_str,category))
+    with open ("/home/psr/TPA/TPA_Classifier/measured_parameters/category.list","a") as f:
+        f.write("{0},{1},{2},{3} \n".format(psrname,username_str.rstrip(),comments_str.rstrip(),category))
     f.close()
     status.text="Saved tags."
 

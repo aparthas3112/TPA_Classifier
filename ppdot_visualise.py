@@ -29,14 +29,17 @@ import shlex,glob
 parser = argparse.ArgumentParser(description="P-Pdot visualiser for TPA pulsars")
 parser.add_argument("-load",dest="load_pickle",help="Path to the Gsheet pickle file.",required=True)
 parser.add_argument("-psrcat", dest="psrcat", help="Path to the full catalogue pickle file", required=True)
+parser.add_argument("-tags", dest="tags", help="File with predefined tags", required=True)
 args = parser.parse_args()
 
+#Reading the two dataframes
 df = pd.read_pickle(str(args.load_pickle))
 df_cat = pd.read_pickle(str(args.psrcat))
+
+#Setting attributes for df_cat
 df_cat["color"] = "#7f8c8d"
 df_cat["alpha"] = 0.6
 df_cat["size"] = 7
-
 
 #Set color and alpha
 df["color"] = np.where(df["DM"] > 0, "#3498db", "grey")
@@ -46,7 +49,7 @@ df['size'] = np.where(df["DM"] > 0, 9, 5)
 #Replacing empty,NAN cells
 df["ASSOC"].fillna("NA",inplace=True)
 df["BNAME"].replace("","NA",inplace=True)
-df["CATEGORY"].replace(np.nan,"UC",inplace=True)
+df["CATEGORY"].replace(np.nan,"Unclassified",inplace=True)
 df["COMMENTS"].replace(np.nan,"NA",inplace=True)
 
 #Converting columns to appropriate data types
@@ -73,10 +76,23 @@ df["AGE"] = df["AGE"]/10**3
 df["BSURF"] = df["BSURF"]/10**10
 df["EDOT"] = df["EDOT"]/10**30
 
+#Converting to log-scale
 df["F1"] = np.log10(abs(df["F1"]).astype("float64"))
 df["AGE"] = np.log10(df["AGE"].astype("float64"))
 df["BSURF"] = np.log10(df["BSURF"].astype("float64"))
 df["EDOT"] = np.log10(df["EDOT"].astype("float64"))
+
+#Getting pre-defined tag list
+tags = {}
+with open (args.tags, 'r') as f:
+    for line in f:
+        if "#" in line:
+            key = line.split("#")[-1].rstrip()
+            tags[key] = []
+        else:
+            tags[key].append(line.rstrip())
+
+f.close()
 
 # Create Input controls
 F0 = Slider(title="Spin-frequency(F0)", value=df["F0"].min(), start=df["F0"].min(), end=df["F0"].max(), step=1)
@@ -105,43 +121,10 @@ USER_TEXT = PreText(text="""TODO:
 CATALOGUE = Toggle(label="Toggle catalogue", width=300, button_type="success")
 UPDATE = Button(label="Update",width=300)
 
-profile_map = {
-    "Gaussian": "GAU",
-    "DoublePeak": "DP",
-    "TriplePeak": "TP",
-    "Interpulse": "IP",
-    "Symmetric": "SYM",
-    "Complicated": "COM",
-    "Unclassified": "UC",
-}
-PROFILE = Select(title="Profile tags", options=sorted(profile_map.keys()), value="Unclassified")
-pol_map = {
-    "Linear": "LINP",
-    "Circular": "CIRP",
-    "PASwing": "PA",
-    "RVM": "RVM",
-    "Unclassified": "UC",
-}
-POL = Select(title="Polarization tags", options=sorted(pol_map.keys()), value="Unclassified")
-frequency_map = {
-    "FreqEvol": "FEVOL",
-    "Scattered": "SCAT",
-    "Scintillating": "SCIN",
-    "Unclassified": "UC",
-}
-FREQ = Select(title="Frequency tags", options=sorted(frequency_map.keys()), value="Unclassified")
-time_map = {
-    "Nulling": "NULL",
-    "Moding": "MODE",
-    "StrongModulation": "MODU",
-    "Stable": "STAB",
-    "Drifting": "DRIFT",
-    "Unclassified": "UC",
-}
-TIME = Select(title="Time tags", options=sorted(time_map.keys()), value="Unclassified")
-
-#ADD CATEGORY TAGS HERE
-#y_axis = Select(title="Y Axis", options=sorted(axis_map.keys()), value="Number of Reviews")
+PROFILE = Select(title="Profile tags", options=tags["PROFILE"], value="Unclassified")
+POL = Select(title="Polarization tags", options=tags["POLARIZATION"], value="Unclassified")
+FREQ = Select(title="Frequency tags", options=tags["FREQUENCY"], value="Unclassified")
+TIME = Select(title="Time tags", options=tags["TIME"], value="Unclassified")
 
 # Create Column Data Source that will be used by the plot
 source = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
@@ -162,56 +145,13 @@ p = figure(plot_height=1000, plot_width=900, title="", tooltips=TOOLTIPS, sizing
            x_axis_type="log",tools=TOOLS)
 p.circle(x="P0", y="P1", source=source, size='size', color="color", line_color=None, fill_alpha="alpha")
 
-
-def mapper(value):
-    if value == "Gaussian":
-        key = "GAU"
-    if value == "DoublePeak":
-        key = "DP"
-    if value == "TriplePeak":
-        key = "TP"
-    if value == "Interpulse":
-        key = "IP"
-    if value == "Symmetric":
-        key = "SYM"
-    if value == "Complicated":
-        key = "COM"
-    if value == "Unclassified":
-        key = "UC"
-    if value == "Linear":
-        key = "LINP"
-    if value == "Circular":
-        key = "CIRP"
-    if value == "PASwing":
-        key = "PA"
-    if value == "RVM":
-        key = "RVM"
-    if value == "FreqEvol":
-        key = "FEVOL"
-    if value == "Scattered":
-        key = "SCAT"
-    if value == "Scintillating":
-        key = "SCIN"
-    if value == "Nulling":
-        key = "NULL"
-    if value == "Moding":
-        key = "MODE"
-    if value == "StrongModulation":
-        key = "MODU"
-    if value == "Stable":
-        key = "STAB"
-    if value == "Drifting":
-        key = "DRIFT"
-
-    return key
-
 def update_textboxes(conv_f1,conv_age,conv_bsurf,conv_edot):
     F1_TEXT.text = "F1: "+str(conv_f1)+" x 1e-13"
     AGE_TEXT.text = "AGE: "+str(conv_age)+" Kyr"
     BSURF_TEXT.text = "BSURF: "+str(conv_bsurf)+" x 1e10"
     EDOT_TEXT.text = "EDOT: "+str(conv_edot)+" x 1e30"
 
-def select_movies():
+def select_pulsars():
     assoc_val = ASSOC.value
     selected = df[
         (df.F0 >= F0.value) &
@@ -227,22 +167,14 @@ def select_movies():
     if (assoc_val != "NA"):
         selected = selected[selected.ASSOC.str.contains(assoc_val)==True]
 
-    profile_key = mapper(PROFILE.value)
-    pol_key = mapper(POL.value)
-    freq_key = mapper(FREQ.value)
-    time_key = mapper(TIME.value)
-
-    if not profile_key == "UC":
-        selected = selected[selected['CATEGORY'].str.contains(profile_key,na=False)]
-    if not pol_key == "UC":
-        selected = selected[selected['CATEGORY'].str.contains(pol_key,na=False)]
-    if not freq_key == "UC":
-        selected = selected[selected['CATEGORY'].str.contains(freq_key,na=False)]
-    if not time_key == "UC":
-        selected = selected[selected['CATEGORY'].str.contains(time_key,na=False)]
-
-
-    #print profile_key,pol_key,freq_key,time_key
+    if not PROFILE.value == "Unclassified":
+        selected = selected[selected['CATEGORY'].str.contains(PROFILE.value,na=False)]
+    if not POL.value == "Unclassified":
+        selected = selected[selected['CATEGORY'].str.contains(POL.value,na=False)]
+    if not FREQ.value == "Unclassified":
+        selected = selected[selected['CATEGORY'].str.contains(FREQ.value,na=False)]
+    if not TIME.value == "Unclassified":
+        selected = selected[selected['CATEGORY'].str.contains(TIME.value,na=False)]
 
     conv_f1 = -10**(F1.value)
     conv_age = 10**(AGE.value)
@@ -254,7 +186,7 @@ def select_movies():
     return selected
 
 def update():
-    df = select_movies()
+    df = select_pulsars()
     if not CATALOGUE.active:
         source_data(df)
     else:

@@ -86,6 +86,7 @@ def capture_screenshot(url):
     CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
     WINDOW_SIZE = "900,600"
     chrome_options = Options()
+    chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
     chrome_options.add_argument("--no-sandbox")
@@ -123,7 +124,10 @@ def check_classification_history(psr):
                 category.append(sline[-1].rstrip())
                 comments.append(sline[2].rstrip())
                 users.append(sline[1].rstrip())
-        status.text = "Already classified.\n{0}\n{1}\n{2}".format(category,comments,users)
+        if not len(category) > 0:
+            status.text = "New classification."
+        else:
+            status.text = "Already classified.\n{0}\n{1}\n{2}".format(category,comments,users)
 
     else:
         pass

@@ -21,6 +21,7 @@ from bokeh.io import curdoc
 from bokeh.layouts import column, layout, row
 from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, MultiSelect
 from bokeh.plotting import figure
+from bokeh.events import DoubleTap
 
 import argparse
 import shlex,glob
@@ -131,7 +132,7 @@ OBS = MultiSelect(title="Observation tags", options=tags["OBSERVATION"], value=[
 # Create Column Data Source that will be used by the plot
 source = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
 
-TOOLS = 'pan,wheel_zoom,xbox_select,box_zoom,lasso_select,undo,redo,save,reset'
+TOOLS = 'pan,wheel_zoom,xbox_select,box_zoom,lasso_select,undo,redo,save,reset,tap'
 TOOLTIPS=[
     ("JNAME","@JNAME"),
     ("P0", "@P0"),
@@ -203,7 +204,6 @@ def update():
         df = df.append(df_cat,sort=True)
         source_data(df)
 
-
 def source_data(dataframe):
 
     df = dataframe
@@ -268,6 +268,8 @@ UPDATE.on_click(update)
 
 sliders_texts = column(inputs_status,texts,category_inputs_all,CATALOGUE)
 plot_update = column(p,UPDATE)
+
+#p.on_event(DoubleTap,update) #Disabled for now
 
 l = layout([
     [plot_update,sliders_texts],

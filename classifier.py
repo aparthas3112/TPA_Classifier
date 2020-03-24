@@ -151,7 +151,25 @@ def update_text():
 
 
 def update_save():
-    pass
+    profile_inds = profile_tags.active
+    pol_inds = pol_tags.active
+    freq_inds = freq_tags.active
+    time_inds = time_tags.active
+
+    profile_vals = [tags["PROFILE"][i] for i in profile_inds]
+    pol_vals = [tags["POLARIZATION"][i] for i in pol_inds]
+    freq_vals = [tags["FREQUENCY"][i] for i in freq_inds]
+    time_vals = [tags["TIME"][i] for i in time_inds]
+
+    url = get_url(psr_select.value)
+    psrname = os.path.split(url)[-1].split(".html")[0]
+
+    category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3}".format(profile_vals,pol_vals,freq_vals,time_vals)
+
+    with open ("/home/psr/TPA/TPA_Classifier/measured_parameters/categorization.list","a") as f:
+        f.write("{0} {1} \n".format(psrname,category))
+    f.close()
+    status.text="Saved tags."
 
 #Setting up the web layout
 psr_select.on_change('value',lambda attr, old, new: update())

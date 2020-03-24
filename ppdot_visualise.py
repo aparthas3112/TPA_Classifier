@@ -13,13 +13,13 @@ __status__ = "Development"
 
 """
 
-import os,sys
+import os,sys,re
 import numpy as np
 import pandas as pd
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, layout, row
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool
+from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, MultiSelect
 from bokeh.plotting import figure
 
 import argparse
@@ -48,9 +48,9 @@ df['size'] = np.where(df["DM"] > 0, 9, 5)
 
 #Replacing empty,NAN cells
 df["ASSOC"].fillna("NA",inplace=True)
-df["BNAME"].replace("","NA",inplace=True)
-df["CATEGORY"].replace(np.nan,"Unclassified",inplace=True)
-df["COMMENTS"].replace(np.nan,"NA",inplace=True)
+df["BNAME"].fillna("NA",inplace=True)
+df["CATEGORY"].fillna("Unclassified",inplace=True)
+df["COMMENTS"].fillna("NA",inplace=True)
 
 #Converting columns to appropriate data types
 df["DM"] = pd.to_numeric(df["DM"], downcast="float")
@@ -98,7 +98,7 @@ f.close()
 F0 = Slider(title="Spin-frequency(F0)", value=df["F0"].min(), start=df["F0"].min(), end=df["F0"].max(), step=1)
 F1 = Slider(title="Spin-frequency derivative(F1)(log)", value=df["F1"].min(), start=df["F1"].min(), end=df["F1"].max(), step=0.5)
 DM = Slider(title="Dispersion measure(DM)", value=df["DM"].min(), start=df["DM"].min(), end=df["DM"].max(), step=0.5)
-RM = Slider(title="Rotation measure(RM)", value=df["RM"].min(), start=df["RM"].min(), end=df["RM"].max(), step=0.5)
+RM = Slider(title="Rotation measure(RM) - DISABLED", value=df["RM"].min(), start=df["RM"].min(), end=df["RM"].max(), step=0.5)
 DIST = Slider(title="Distance", value=df["DIST"].min(), start=df["DIST"].min(), end=df["DIST"].max(), step=0.5)
 AGE = Slider(title="Characteristic age(log)", value=df["AGE"].min(), start=df["AGE"].min(), end=df["AGE"].max(), step=0.5)
 BSURF = Slider(title="Surface B-field(BSURF)(log)", value=df["BSURF"].min(), start=df["BSURF"].min(), end=df["BSURF"].max(), step=0.5)
@@ -110,21 +110,23 @@ F1_TEXT = PreText(text='', width=500)
 AGE_TEXT = PreText(text='', width=500)
 BSURF_TEXT = PreText(text='', width=500)
 EDOT_TEXT = PreText(text='', width=500)
-USER_TEXT = PreText(text="""TODO:
+status = PreText(text="""TODO:
 1. Make P-Pdot plot more useful.
 2. Add user comments.
-3. Add classification tags to all the TPA pulsars.
-4. Add URLs to Simon's webpage.
-5. Feedback.
+3. Discuss classification tags.
+4. Feedback.
+5. Add histograms.
 """, width=500)
 
 CATALOGUE = Toggle(label="Toggle catalogue", width=300, button_type="success")
 UPDATE = Button(label="Update",width=300)
 
-PROFILE = Select(title="Profile tags", options=tags["PROFILE"], value="Unclassified")
-POL = Select(title="Polarization tags", options=tags["POLARIZATION"], value="Unclassified")
-FREQ = Select(title="Frequency tags", options=tags["FREQUENCY"], value="Unclassified")
-TIME = Select(title="Time tags", options=tags["TIME"], value="Unclassified")
+PROFILE = MultiSelect(title="Profile tags", options=tags["PROFILE"], value=["Unclassified"],height=200)
+POL = MultiSelect(title="Polarization tags", options=tags["POLARIZATION"], value=["Unclassified"],height=200)
+FREQ = MultiSelect(title="Frequency tags", options=tags["FREQUENCY"], value=["Unclassified"],height=200)
+TIME = MultiSelect(title="Time tags", options=tags["TIME"], value=["Unclassified"],height=200)
+OBS = MultiSelect(title="Observation tags", options=tags["OBSERVATION"], value=["Unclassified"],height=200)
+
 
 # Create Column Data Source that will be used by the plot
 source = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
@@ -138,7 +140,6 @@ TOOLTIPS=[
     ("RM", "@RM"),
     ("PB", "@PB"),
     ("NGLT", "@NGLT"),
-    ("CATEGORY","@CATEGORY")
 ]
 
 p = figure(plot_height=1000, plot_width=900, title="", tooltips=TOOLTIPS, sizing_mode="scale_both",y_axis_type="log",
@@ -157,7 +158,7 @@ def select_pulsars():
         (df.F0 >= F0.value) &
         (df.F1 >= F1.value) &
         (df.DM >= DM.value) &
-        (df.RM >= RM.value) &
+        #(df.RM >= np.abs(RM.value)) &
         (df.DIST >= DIST.value) &
         (df.AGE >= AGE.value) &
         (df.BSURF >= BSURF.value) &
@@ -167,14 +168,23 @@ def select_pulsars():
     if (assoc_val != "NA"):
         selected = selected[selected.ASSOC.str.contains(assoc_val)==True]
 
-    if not PROFILE.value == "Unclassified":
-        selected = selected[selected['CATEGORY'].str.contains(PROFILE.value,na=False)]
-    if not POL.value == "Unclassified":
-        selected = selected[selected['CATEGORY'].str.contains(POL.value,na=False)]
-    if not FREQ.value == "Unclassified":
-        selected = selected[selected['CATEGORY'].str.contains(FREQ.value,na=False)]
-    if not TIME.value == "Unclassified":
-        selected = selected[selected['CATEGORY'].str.contains(TIME.value,na=False)]
+    profile_values = [str(r) for r in PROFILE.value]
+    pol_values = [str(r) for r in POL.value]
+    freq_values = [str(r) for r in FREQ.value]
+    time_values = [str(r) for r in TIME.value]
+    obs_values = [str(r) for r in OBS.value]
+
+    print '|'.join(profile_values)
+    if not "Unclassified" in profile_values:
+        selected = selected[selected['CATEGORY'].str.contains('|'.join(profile_values),regex=True,na=False)]
+    if not "Unclassified" in pol_values:
+        selected = selected[selected['CATEGORY'].str.contains('|'.join(pol_values),regex=True,na=False)]
+    if not "Unclassified" in freq_values:
+        selected = selected[selected['CATEGORY'].str.contains('|'.join(freq_values),regex=True,na=False)]
+    if not "Unclassified" in time_values:
+        selected = selected[selected['CATEGORY'].str.contains('|'.join(time_values),regex=True,na=False)]
+    if not "Unclassified" in obs_values:
+        selected = selected[selected['CATEGORY'].str.contains('|'.join(obs_values),regex=True,na=False)]
 
     conv_f1 = -10**(F1.value)
     conv_age = 10**(AGE.value)
@@ -242,23 +252,26 @@ controls = [F0,F1,DM,RM,DIST,AGE,BSURF,EDOT,ASSOC]
 for control in controls:
     control.on_change('value', lambda attr, old, new: update())
 inputs = column(*controls)
+inputs_status = row(inputs,status)
 
-categories = [PROFILE,POL,FREQ,TIME]
+categories = [PROFILE,POL,FREQ,TIME,OBS]
 for category in categories:
     category.on_change('value', lambda attr, old, new: update())
-category_inputs = column(*categories)
+category_inputs = column(PROFILE,POL)
+category_inputs1 = column(FREQ,TIME)
+category_inputs_all = row(category_inputs,category_inputs1,OBS)
 
 text_boxes = [F1_TEXT,AGE_TEXT,BSURF_TEXT,EDOT_TEXT]
 texts = column(*text_boxes)
 
 UPDATE.on_click(update)
 
-sliders_texts = column(inputs,texts,category_inputs,CATALOGUE)
+sliders_texts = column(inputs_status,texts,category_inputs_all,CATALOGUE)
 plot_update = column(p,UPDATE)
 
 l = layout([
-    [plot_update,sliders_texts,USER_TEXT],
-],sizing_mode='fixed')
+    [plot_update,sliders_texts],
+],sizing_mode='scale_width')
 
 update()  # initial load of the data
 

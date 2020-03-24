@@ -196,7 +196,7 @@ def update_save():
     pol_vals = [tags["POLARIZATION"][i].rstrip() for i in pol_inds]
     freq_vals = [tags["FREQUENCY"][i].rstrip() for i in freq_inds]
     time_vals = [tags["TIME"][i].rstrip() for i in time_inds]
-    observation_vals = [tags["OBSERVATION"][i] for i in observation_inds]
+    observation_vals = [tags["OBSERVATION"][i].rstrip() for i in observation_inds]
 
     profile_vals = "+".join(profile_vals)
     pol_vals = "+".join(pol_vals)

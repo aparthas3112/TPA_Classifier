@@ -19,7 +19,7 @@ import pandas as pd
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, layout, row
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, CheckboxButtonGroup
+from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, CheckboxButtonGroup, TextInput, TextAreaInput
 from bokeh.plotting import figure
 
 import argparse
@@ -53,9 +53,10 @@ f.close()
 
 source = ColumnDataSource(data=dict(rgba=[],))
 #Setting up the main plots
-psr_select = Select(title="Choose pulsar", value=psrlist[0], options=psrlist)
+username = TextInput(value="",title="Username (please be consistent)")
+psr_select = Select(title="TPA pulsars", value=' ', options=psrlist)
 TOOLS = 'box_zoom,ywheel_pan,undo,redo,reset,save'
-p = figure(plot_width = 1600, plot_height = 900,tools=TOOLS)
+p = figure(plot_width = 1800, plot_height = 900,tools=TOOLS)
 p.image_rgba(image='rgba', x=0, y=0, dw=10, dh=10,source=source)
 p.x_range.range_padding = p.y_range.range_padding = 0
 p.xaxis.visible = None
@@ -71,6 +72,7 @@ freq_tags = CheckboxButtonGroup(labels=tags["FREQUENCY"],active=[])
 time_tags = CheckboxButtonGroup(labels=tags["TIME"],active=[])
 apply_tags = Button(label="Apply tags", button_type="success")
 save = Button(label="Save tags", button_type="success")
+comments = TextAreaInput(value="",title="User comments",rows=6)
 
 
 def get_url(psrname):
@@ -81,7 +83,7 @@ def capture_screenshot(url):
     status.text = "Procuring a snapshot from the TPA webpage..."
     CHROME_PATH = '/usr/bin/google-chrome-stable'
     CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
-    WINDOW_SIZE = "800,400"
+    WINDOW_SIZE = "900,600"
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
@@ -124,13 +126,16 @@ def convert_image(save_path):
     return array
 
 def update():
-    selected_psr = psr_select.value
-    status.text = "Selected pulsar {0}".format(selected_psr)
-    url = get_url(selected_psr)
-    save_path = capture_screenshot(url)
-    rgba_array = convert_image(save_path)
-    status.text = "Success. Displaying plot below."
-    source.data=dict(rgba=[rgba_array])
+    if not username.value == "":
+        selected_psr = psr_select.value
+        status.text = "Selected pulsar {0}".format(selected_psr)
+        url = get_url(selected_psr)
+        save_path = capture_screenshot(url)
+        rgba_array = convert_image(save_path)
+        status.text = "Success. Displaying plot below."
+        source.data=dict(rgba=[rgba_array])
+    else:
+        status.text = "Please enter username to proceed."
 
 def update_text():
     profile_inds = profile_tags.active
@@ -142,12 +147,14 @@ def update_text():
     pol_vals = [tags["POLARIZATION"][i] for i in pol_inds]
     freq_vals = [tags["FREQUENCY"][i] for i in freq_inds]
     time_vals = [tags["TIME"][i] for i in time_inds]
+    comments_vals = comments.value
 
     tags_text.text = """
     PROFILE:{0}
     POLARIZATION:{1}
     FREQUENCY:{2}
-    TIME:{3}""".format(profile_vals,pol_vals,freq_vals,time_vals)
+    TIME:{3}
+    COMMENTS:{4}""".format(profile_vals,pol_vals,freq_vals,time_vals,comments_vals)
 
 
 def update_save():
@@ -163,30 +170,32 @@ def update_save():
 
     url = get_url(psr_select.value)
     psrname = os.path.split(url)[-1].split(".html")[0]
-
+    username_str = username.value
+    comments_str = comments.value
     category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3}".format(profile_vals,pol_vals,freq_vals,time_vals)
 
     with open ("/home/psr/TPA/TPA_Classifier/measured_parameters/categorization.list","a") as f:
-        f.write("{0} {1} \n".format(psrname,category))
+        f.write("{0},{1},{2},{3} \n".format(psrname,username_str,comments_str,category))
     f.close()
     status.text="Saved tags."
 
 #Setting up the web layout
 psr_select.on_change('value',lambda attr, old, new: update())
 
+select_status = row(psr_select,status,username)
+inputs_webshot = column(select_status,p)
+
 apply_tags.on_click(update_text)
 save.on_click(update_save)
 apply_save_row = row(apply_tags,save)
 
-select_status = row(psr_select,status)
-inputs_webshot = column(select_status,p)
-
 tags_column = column(profile_tags,pol_tags,freq_tags,time_tags)
 tags_buttons = column(tags_column,apply_save_row)
 
+
 l = layout([
     [inputs_webshot],
-    [tags_buttons,tags_text],
+    [tags_buttons,comments,tags_text],
 ],sizing_mode='fixed')
 
 update()  # initial load of the data

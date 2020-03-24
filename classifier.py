@@ -74,6 +74,7 @@ observation_tags = CheckboxButtonGroup(labels=tags["OBSERVATION"],active=[])
 apply_tags = Button(label="Apply tags", button_type="success")
 save = Button(label="Save tags", button_type="success")
 comments = TextAreaInput(value="",title="User comments",rows=6)
+getlatest = Toggle(label="Get latest webshot", button_type="primary")
 
 
 def get_url(psrname):
@@ -157,7 +158,14 @@ def update():
         selected_psr = psr_select.value
         status.text = "Selected pulsar {0}".format(selected_psr)
         url = get_url(selected_psr)
-        save_path = capture_screenshot(url)
+
+        if not os.path.exists("/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(selected_psr)):
+            save_path = capture_screenshot(url)
+        elif getlatest.active:
+            save_path = capture_screenshot(url)
+        else:
+            save_path = "/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(selected_psr)
+
         rgba_array = convert_image(save_path)
         status.text = "Success. Displaying plot below."
         source.data=dict(rgba=[rgba_array])
@@ -223,8 +231,8 @@ def update_save():
 
 #Setting up the web layout
 psr_select.on_change('value',lambda attr, old, new: update())
-
-select_status = row(psr_select,username,status)
+psrselect_webshot = column(psr_select,getlatest)
+select_status = row(psrselect_webshot,username,status)
 inputs_webshot = column(select_status,p)
 
 apply_tags.on_click(update_text)

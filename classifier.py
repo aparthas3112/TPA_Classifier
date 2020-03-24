@@ -63,6 +63,7 @@ p.yaxis.visible = None
 p.xgrid.grid_line_color = None
 p.ygrid.grid_line_color = None
 status = PreText(text="",width=400)
+tags_text = PreText(text="", width=400)
 
 profile_tags = CheckboxButtonGroup(labels=tags["PROFILE"],active=[])
 pol_tags = CheckboxButtonGroup(labels=tags["POLARIZATION"],active=[])
@@ -131,13 +132,31 @@ def update():
     status.text = "Success. Displaying plot below."
     source.data=dict(rgba=[rgba_array])
 
+def update_text():
+    profile_inds = profile_tags.active
+    pol_inds = pol_tags.active
+    freq_inds = freq_tags.active
+    time_inds = time_tags.active
+
+    profile_vals = [tags["PROFILE"][i] for i in profile_inds]
+    pol_vals = [tags["POLARIZATION"][i] for i in pol_inds]
+    freq_vals = [tags["FREQUENCY"][i] for i in freq_inds]
+    time_vals = [tags["TIME"][i] for i in time_inds]
+
+    tags_text.text = """
+    PROFILE:{0}
+    POLARIZATION:{1}
+    FREQUENCY:{2}
+    TIME:{3}""".format(profile_vals,pol_vals,freq_vals,time_vals)
+
+
 def update_save():
     pass
 
 #Setting up the web layout
 psr_select.on_change('value',lambda attr, old, new: update())
 
-apply_tags.on_click(update)
+apply_tags.on_click(update_text)
 save.on_click(update_save)
 apply_save_row = row(apply_tags,save)
 
@@ -149,7 +168,7 @@ tags_buttons = column(tags_column,apply_save_row)
 
 l = layout([
     [inputs_webshot],
-    [tags_buttons],
+    [tags_buttons,tags_text],
 ],sizing_mode='fixed')
 
 update()  # initial load of the data

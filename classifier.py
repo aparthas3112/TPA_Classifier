@@ -96,6 +96,9 @@ def capture_screenshot(url):
     )
     driver.get(url)
     psrname = os.path.split(url)[-1].split(".html")[0]
+    main_path = "/home/psr/TPA/TPA_Classifier/webshots"
+    if not os.path.exists(main_path):
+        os.makedirs(main_path)
     save_path = "/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(psrname)
     height = driver.execute_script("return document.body.scrollHeight")
     width = driver.execute_script("return document.body.scrollWidth")

@@ -40,12 +40,22 @@ args = parser.parse_args()
 #Parsing input parameters
 psrlist = np.genfromtxt(args.psrlist,dtype=str,comments="#",autostrip=True)
 psrlist=psrlist.tolist()
+tags = {}
+with open (args.taglist, 'r') as f:
+    for line in f:
+        if "#" in line:
+            key = line.split("#")[-1].rstrip()
+            tags[key] = []
+        else:
+            tags[key].append(line.rstrip())
 
+f.close()
 
 source = ColumnDataSource(data=dict(rgba=[],))
 #Setting up the main plots
 psr_select = Select(title="Choose pulsar", value=psrlist[0], options=psrlist)
-p = figure(plot_width = 1600, plot_height = 900)
+TOOLS = 'box_zoom,ywheel_pan,undo,redo,reset,save'
+p = figure(plot_width = 1600, plot_height = 900,tools=TOOLS)
 p.image_rgba(image='rgba', x=0, y=0, dw=10, dh=10,source=source)
 p.x_range.range_padding = p.y_range.range_padding = 0
 p.xaxis.visible = None
@@ -53,6 +63,13 @@ p.yaxis.visible = None
 p.xgrid.grid_line_color = None
 p.ygrid.grid_line_color = None
 status = PreText(text="",width=400)
+
+profile_tags = CheckboxButtonGroup(labels=tags["PROFILE"],active=[])
+pol_tags = CheckboxButtonGroup(labels=tags["POLARIZATION"],active=[])
+freq_tags = CheckboxButtonGroup(labels=tags["FREQUENCY"],active=[])
+time_tags = CheckboxButtonGroup(labels=tags["TIME"],active=[])
+apply_tags = Button(label="Apply tags", button_type="success")
+save = Button(label="Save tags", button_type="success")
 
 
 def get_url(psrname):
@@ -63,7 +80,7 @@ def capture_screenshot(url):
     status.text = "Procuring a snapshot from the TPA webpage..."
     CHROME_PATH = '/usr/bin/google-chrome-stable'
     CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
-    WINDOW_SIZE = "700,300"
+    WINDOW_SIZE = "800,400"
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
@@ -87,7 +104,6 @@ def capture_screenshot(url):
 
 def convert_image(save_path):
     if os.path.exists(save_path):
-        print "sadad"
         status.text = "Converting image to RGBA vector."
         img = Image.open(save_path)
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
@@ -115,15 +131,25 @@ def update():
     status.text = "Success. Displaying plot below."
     source.data=dict(rgba=[rgba_array])
 
+def update_save():
+    pass
 
+#Setting up the web layout
 psr_select.on_change('value',lambda attr, old, new: update())
+
+apply_tags.on_click(update)
+save.on_click(update_save)
+apply_save_row = row(apply_tags,save)
 
 select_status = row(psr_select,status)
 inputs_webshot = column(select_status,p)
 
+tags_column = column(profile_tags,pol_tags,freq_tags,time_tags)
+tags_buttons = column(tags_column,apply_save_row)
 
 l = layout([
     [inputs_webshot],
+    [tags_buttons],
 ],sizing_mode='fixed')
 
 update()  # initial load of the data

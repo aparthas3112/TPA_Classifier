@@ -6,3 +6,4 @@ J0108-1431,aparthas,PAswingisflatacrosstheprofile,PROFILE:Gaussian;POLARIZATION:
 J0111-7131,aparthas,Doweneedmore,PROFILE:Gaussian;POLARIZATION:NotSure;FREQUENCY:NotSure;TIME:NotSure;OBSERVATION:LowSN 
 J0113-7220,aparthas,Bothpolsflat,PROFILE:Gaussian;POLARIZATION:NotSure;FREQUENCY:FlatSpectrum;TIME:Stable;OBSERVATION:NeedMore+MediumSN 
 J0131-7310,aparthas,Bothpolsflat,PROFILE:Gaussian;POLARIZATION:FreqDependent+NotSure;FREQUENCY:NotSure;TIME:Stable+NotSure;OBSERVATION:LowSN 
+J0038-2501,aparthas,Testing,PROFILE:Symmetric+Complicated;POLARIZATION:CircularPol+NotSure;FREQUENCY:FreqProfileEvol;TIME:ModeChanging+NotSure;OBSERVATION:NoMore+NeedsEphem 

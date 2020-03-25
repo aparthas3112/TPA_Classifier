@@ -58,7 +58,8 @@ else:
         else:
             colname = fname.split("_")[0]
             custom_df = pd.read_csv(fpath,sep=',',names=["JNAME","USER","COMMENTS","CATEGORY"],comment="#")
-            print custom_df
+
+            #print custom_df
 
         df = pd.merge(df,custom_df,on='JNAME',how='outer')
 

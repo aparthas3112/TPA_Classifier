@@ -153,11 +153,20 @@ def convert_image(save_path):
 
     return array
 
+def reset_tags():
+    profile_tags.active=[]
+    pol_tags.active=[]
+    freq_tags.active=[]
+    time_tags.active=[]
+    observation_tags.active=[]
+
 def update():
     if not username.value == "":
         selected_psr = psr_select.value
         status.text = "Selected pulsar {0}".format(selected_psr)
         url = get_url(selected_psr)
+
+        reset_tags()
 
         if not os.path.exists("/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(selected_psr)):
             save_path = capture_screenshot(url)

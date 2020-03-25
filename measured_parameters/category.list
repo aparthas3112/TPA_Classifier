@@ -2,3 +2,7 @@ J0038-2501,aparthas,,PROFILE:Symmetric+Wide;POLARIZATION:NotSure;FREQUENCY:NotSu
 J0045-7042,aparthas,PAnotclear,PROFILE:Gaussian+Symmetric;POLARIZATION:FreqDependent;FREQUENCY:NotSure;TIME:Stable+NotSure;OBSERVATION:LowSN 
 J0034-0721,aparthas,Interestingnullingbehaviour,PROFILE:Gaussian;POLARIZATION:PAJump;FREQUENCY:FreqProfileEvol+Scattering+Scintillation;TIME:Nulling;OBSERVATION:NeedMore+HighSN 
 J0045-7319,aparthas,Notsureifweneedmore,PROFILE:NotSure;POLARIZATION:NotSure;FREQUENCY:NotSure;TIME:NotSure;OBSERVATION:LowSN 
+J0108-1431,aparthas,PAswingisflatacrosstheprofile,PROFILE:Gaussian;POLARIZATION:LinearPol;FREQUENCY:FreqProfileEvol;TIME:Stable;OBSERVATION:HighSN 
+J0111-7131,aparthas,Doweneedmore,PROFILE:Gaussian;POLARIZATION:NotSure;FREQUENCY:NotSure;TIME:NotSure;OBSERVATION:LowSN 
+J0113-7220,aparthas,Bothpolsflat,PROFILE:Gaussian;POLARIZATION:NotSure;FREQUENCY:FlatSpectrum;TIME:Stable;OBSERVATION:NeedMore+MediumSN 
+J0131-7310,aparthas,Bothpolsflat,PROFILE:Gaussian;POLARIZATION:FreqDependent+NotSure;FREQUENCY:NotSure;TIME:Stable+NotSure;OBSERVATION:LowSN 

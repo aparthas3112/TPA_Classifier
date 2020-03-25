@@ -159,6 +159,8 @@ def reset_tags():
     freq_tags.active=[]
     time_tags.active=[]
     observation_tags.active=[]
+    tags_text.text = ""
+    comments.value = ""
 
 def update():
     if not username.value == "":

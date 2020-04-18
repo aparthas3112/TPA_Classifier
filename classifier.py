@@ -67,7 +67,7 @@ p.ygrid.grid_line_color = None
 status = Paragraph(text="",width=900,height=100)
 tags_text = PreText(text="", width=400)
 
-profile_tags = CheckboxButtonGroup(labels=tags["PROFILE"],active=[],width=800)
+profile_tags = CheckboxButtonGroup(labels=tags["PROFILE"],active=[],width=1400)
 pol_tags = CheckboxButtonGroup(labels=tags["POLARIZATION"],active=[])
 freq_tags = CheckboxButtonGroup(labels=tags["FREQUENCY"],active=[])
 time_tags = CheckboxButtonGroup(labels=tags["TIME"],active=[])
@@ -236,10 +236,10 @@ def update_save():
 
     category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3};OBSERVATION:{4}".format(profile_vals,pol_vals,freq_vals,time_vals,observation_vals)
 
-    with open (os.path.join(current_path,"measured_parameters/category.list","a")) as f:
+    with open (os.path.join(current_path,"measured_parameters/category.list"),"a") as f:
         f.write("{0},{1},{2},{3} \n".format(psrname,username_str.rstrip(),comments_str.rstrip(),category))
     f.close()
-    status.text="Saved tags."
+    tags_text.text="Saved tags."
 
 #Setting up the web layout
 psr_select.on_change('value',lambda attr, old, new: update())
@@ -253,11 +253,12 @@ apply_save_row = row(apply_tags,save)
 
 tags_column = column(profile_tags,pol_tags,freq_tags,time_tags,observation_tags)
 tags_buttons = column(tags_column,apply_save_row)
+comments_tags = column(comments,tags_text)
 
 
 l = layout([
     [inputs_webshot],
-    [tags_buttons,comments,tags_text],
+    [tags_buttons,comments_tags],
 ],sizing_mode='scale_width')
 
 update()  # initial load of the data

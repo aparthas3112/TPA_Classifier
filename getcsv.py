@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-import os,sys
-import shlex,glob
+import os
+import sys
+import shlex
+import glob
 import numpy as np
 import pandas as pd
 import argparse

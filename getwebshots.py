@@ -5,7 +5,9 @@ import numpy as np
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-psrlist_path = "/home/psr/TPA/TPA_Classifier/tpa_psrs.list"
+current_path = str(os.getcwd())
+
+psrlist_path = os.path.join(current_path,"tpa_psrs.list")
 psrlist = np.genfromtxt(psrlist_path,dtype=str,comments="#",autostrip=True)
 
 def get_url(psrname):
@@ -31,10 +33,10 @@ for psr in psrlist:
     url = get_url(psr)
     driver.get(url)
     psrname = os.path.split(url)[-1].split(".html")[0]
-    main_path = "/home/psr/TPA/TPA_Classifier/webshots"
+    main_path = os.path.join(current_path,"webshots")
     if not os.path.exists(main_path):
         os.makedirs(main_path)
-    save_path = "/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(psrname)
+    save_path = os.path.join(current_path,"webshots/{0}.png".format(psrname))
     height = driver.execute_script("return document.body.scrollHeight")
     width = driver.execute_script("return document.body.scrollWidth")
     driver.set_window_size(width,height)

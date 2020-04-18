@@ -36,6 +36,7 @@ parser.add_argument("-psrlist",dest="psrlist",help="Path to file with pulsar lis
 parser.add_argument("-tags", dest="taglist", help="Path to list of pre-defined tags", required=True)
 args = parser.parse_args()
 
+current_path = str(os.getcwd())
 
 #Parsing input parameters
 psrlist = np.genfromtxt(args.psrlist,dtype=str,comments="#",autostrip=True)
@@ -99,10 +100,10 @@ def capture_screenshot(url):
     )
     driver.get(url)
     psrname = os.path.split(url)[-1].split(".html")[0]
-    main_path = "/home/psr/TPA/TPA_Classifier/webshots"
+    main_path = os.path.join(current_path,"webshots")
     if not os.path.exists(main_path):
         os.makedirs(main_path)
-    save_path = "/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(psrname)
+    save_path = os.path.join(current_path,"webshots/{0}.png".format(psrname))
     height = driver.execute_script("return document.body.scrollHeight")
     width = driver.execute_script("return document.body.scrollWidth")
     driver.set_window_size(width,height)
@@ -113,7 +114,7 @@ def capture_screenshot(url):
 
 def check_classification_history(psr):
     #Checking if pulsar already classified
-    classified_list_path = "/home/psr/TPA/TPA_Classifier/measured_parameters/category.list"
+    classified_list_path = os.path.join(current_path,"measured_parameters/category.list")
     if os.path.exists(classified_list_path):
         category=[]
         comments=[]
@@ -170,12 +171,12 @@ def update():
 
         reset_tags()
 
-        if not os.path.exists("/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(selected_psr)):
+        if not os.path.exists(os.path.join(current_path,"webshots/{0}.png".format(selected_psr))):
             save_path = capture_screenshot(url)
         elif getlatest.active:
             save_path = capture_screenshot(url)
         else:
-            save_path = "/home/psr/TPA/TPA_Classifier/webshots/{0}.png".format(selected_psr)
+            save_path = os.path.join(current_path,"webshots/{0}.png".format(selected_psr))
 
         rgba_array = convert_image(save_path)
         status.text = "Success. Displaying plot below."
@@ -235,7 +236,7 @@ def update_save():
 
     category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3};OBSERVATION:{4}".format(profile_vals,pol_vals,freq_vals,time_vals,observation_vals)
 
-    with open ("/home/psr/TPA/TPA_Classifier/measured_parameters/category.list","a") as f:
+    with open (os.path.join(current_path,"measured_parameters/category.list","a")) as f:
         f.write("{0},{1},{2},{3} \n".format(psrname,username_str.rstrip(),comments_str.rstrip(),category))
     f.close()
     status.text="Saved tags."

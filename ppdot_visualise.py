@@ -19,9 +19,9 @@ import pandas as pd
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, layout, row
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, MultiSelect
+from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, MultiSelect, RangeSlider
 from bokeh.plotting import figure
-from bokeh.events import DoubleTap
+from bokeh.events import DoubleTap, Tap
 
 import argparse
 import shlex,glob
@@ -34,8 +34,8 @@ parser.add_argument("-tags", dest="tags", help="File with predefined tags", requ
 args = parser.parse_args()
 
 #Reading the two dataframes
-df = pd.read_pickle(str(args.load_pickle))
-df_cat = pd.read_pickle(str(args.psrcat))
+df = pd.read_pickle(str(args.load_pickle)) #Custom TPA pulsar list
+df_cat = pd.read_pickle(str(args.psrcat)) #Full catalogue pulsar list
 
 #Setting attributes for df_cat
 df_cat["color"] = "#7f8c8d"
@@ -50,8 +50,17 @@ df['size'] = np.where(df["DM"] > 0, 9, 5)
 #Replacing empty,NAN cells
 df["ASSOC"].fillna("NA",inplace=True)
 df["BNAME"].fillna("NA",inplace=True)
+df["TYPE"].fillna("NA",inplace=True)
 df["CATEGORY"].fillna("Unclassified",inplace=True)
 df["COMMENTS"].fillna("NA",inplace=True)
+df["DM"].fillna("0.0",inplace=True)
+df["RM"].fillna("0.0",inplace=True)
+df["DIST"].fillna("0.0",inplace=True)
+
+#print len(df)
+#print df.columns
+#print df["JNAME"],df["F0"]
+#sys.exit()
 
 #Converting columns to appropriate data types
 df["DM"] = pd.to_numeric(df["DM"], downcast="float")
@@ -78,6 +87,7 @@ df["BSURF"] = df["BSURF"]/10**10
 df["EDOT"] = df["EDOT"]/10**30
 
 #Converting to log-scale
+df["F0"] = np.log10(df["F0"]).astype("float64")
 df["F1"] = np.log10(abs(df["F1"]).astype("float64"))
 df["AGE"] = np.log10(df["AGE"].astype("float64"))
 df["BSURF"] = np.log10(df["BSURF"].astype("float64"))
@@ -92,35 +102,34 @@ with open (args.tags, 'r') as f:
             tags[key] = []
         else:
             tags[key].append(line.rstrip())
-
 f.close()
 
 # Create Input controls
-F0 = Slider(title="Spin-frequency(F0)", value=df["F0"].min(), start=df["F0"].min(), end=df["F0"].max(), step=1)
-F1 = Slider(title="Spin-frequency derivative(F1)(log)", value=df["F1"].min(), start=df["F1"].min(), end=df["F1"].max(), step=0.5)
-DM = Slider(title="Dispersion measure(DM)", value=df["DM"].min(), start=df["DM"].min(), end=df["DM"].max(), step=0.5)
-RM = Slider(title="Rotation measure(RM) - DISABLED", value=df["RM"].min(), start=df["RM"].min(), end=df["RM"].max(), step=0.5)
-DIST = Slider(title="Distance", value=df["DIST"].min(), start=df["DIST"].min(), end=df["DIST"].max(), step=0.5)
-AGE = Slider(title="Characteristic age(log)", value=df["AGE"].min(), start=df["AGE"].min(), end=df["AGE"].max(), step=0.5)
-BSURF = Slider(title="Surface B-field(BSURF)(log)", value=df["BSURF"].min(), start=df["BSURF"].min(), end=df["BSURF"].max(), step=0.5)
-EDOT = Slider(title="Energy loss(EDOT)(log)", value=df["EDOT"].min(), start=df["EDOT"].min(), end=df["EDOT"].max(), step=0.5)
+F0 = RangeSlider(title="Spin-frequency(F0)(log)", value=(df["F0"].min(),df["F0"].max()), start=df["F0"].min(), end=df["F0"].max(), step=0.1)
+F1 = RangeSlider(title="Spin-frequency derivative(F1)(log)", value=(df["F1"].min(),df["F1"].max()), start=df["F1"].min(), end=df["F1"].max(), step=0.1)
+DM = RangeSlider(title="Dispersion measure(DM)", value=(df["DM"].min(),df["DM"].max()), start=df["DM"].min(), end=df["DM"].max(), step=0.5)
+RM = RangeSlider(title="Rotation measure(RM) - DISABLED", value=(df["RM"].min(),df["RM"].max()), start=df["RM"].min(), end=df["RM"].max(), step=0.5)
+DIST = RangeSlider(title="Distance", value=(df["DIST"].min(),df["DIST"].max()), start=df["DIST"].min(), end=df["DIST"].max(), step=0.5)
+AGE = RangeSlider(title="Characteristic age(log)", value=(df["AGE"].min(),df["AGE"].max()), start=df["AGE"].min(), end=df["AGE"].max(), step=0.5)
+BSURF = RangeSlider(title="Surface B-field(BSURF)(log)", value=(df["BSURF"].min(),df["BSURF"].max()), start=df["BSURF"].min(), end=df["BSURF"].max(), step=0.5)
+EDOT = RangeSlider(title="Energy loss(EDOT)(log)", value=(df["EDOT"].min(),df["EDOT"].max()), start=df["EDOT"].min(), end=df["EDOT"].max(), step=0.5)
 
-ASSOC = Select(title="Association", options=df["ASSOC"].unique().tolist(), value="NA")
+ASSOC = MultiSelect(title="Association", options=df["ASSOC"].unique().tolist(), value=["NA"])
+TYPE = MultiSelect(title="Type", options=df["TYPE"].unique().tolist(), value=["NA"])
 
-F1_TEXT = PreText(text='', width=500)
-AGE_TEXT = PreText(text='', width=500)
-BSURF_TEXT = PreText(text='', width=500)
-EDOT_TEXT = PreText(text='', width=500)
+SUMMARY_TEXT = PreText(text='', width=500)
+RESET_TOGGLE = Toggle(label="Reset selections", width=150, button_type='warning')
+
 status = PreText(text="""TODO:
 1. Make P-Pdot plot more useful.
 2. Add user comments.
 3. Discuss classification tags.
-4. Feedback.
+4. Feedback.                     
 5. Add histograms.
 """, width=500)
 
-CATALOGUE = Toggle(label="Toggle catalogue", width=300, button_type="success")
-UPDATE = Button(label="Update",width=300)
+CATALOGUE = Toggle(label="Toggle catalogue", width=150, button_type="warning")
+UPDATE = Button(label="Update",width=150, button_type="success")
 
 PROFILE = MultiSelect(title="Profile tags", options=tags["PROFILE"], value=["Unclassified"],height=200)
 POL = MultiSelect(title="Polarization tags", options=tags["POLARIZATION"], value=["Unclassified"],height=200)
@@ -139,7 +148,6 @@ TOOLTIPS=[
     ("P1", "@P1"),
     ("DM", "@DM"),
     ("RM", "@RM"),
-    ("PB", "@PB"),
     ("NGLT", "@NGLT"),
 ]
 
@@ -147,35 +155,86 @@ p = figure(plot_height=1000, plot_width=900, title="", tooltips=TOOLTIPS, sizing
            x_axis_type="log",tools=TOOLS)
 p.circle(x="P0", y="P1", source=source, size='size', color="color", line_color=None, fill_alpha="alpha")
 
-def update_textboxes(conv_f1,conv_age,conv_bsurf,conv_edot):
-    F1_TEXT.text = "F1: "+str(conv_f1)+" x 1e-13"
-    AGE_TEXT.text = "AGE: "+str(conv_age)+" Kyr"
-    BSURF_TEXT.text = "BSURF: "+str(conv_bsurf)+" x 1e10"
-    EDOT_TEXT.text = "EDOT: "+str(conv_edot)+" x 1e30"
+
+def get_tags(dataframe):
+    profile_tags = []
+    pol_tags=[]
+    freq_tags=[]
+    time_tags=[]
+    obs_tags=[]
+
+    tag_list = dataframe["CATEGORY"].tolist()
+
+    for item in tag_list:
+        if not item == "Unclassified":
+            tmp = item.split(";")
+            for item1 in tmp:
+                category_class = item1.split(':')
+                if category_class[0] == "PROFILE":
+                    profile_tags.append(category_class[-1].split("+"))
+
+                elif category_class[0] == "POLARIZATION":
+                    pol_tags.append(category_class[-1].split("+"))
+
+                elif category_class[0] == "FREQUENCY":
+                    freq_tags.append(category_class[-1].split("+"))
+
+                elif category_class[0] == "TIME":
+                    time_tags.append(category_class[-1].split("+"))
+
+                elif category_class[0] == "OBSERVATION":
+                    obs_tags.append(category_class[-1].split("+"))
+
+
+    profile_tags = np.unique([item for sublist in profile_tags for item in sublist])
+    pol_tags = np.unique([item for sublist in pol_tags for item in sublist])
+    freq_tags = np.unique([item for sublist in freq_tags for item in sublist])
+    time_tags = np.unique([item for sublist in time_tags for item in sublist])
+    obs_tags = np.unique([item for sublist in obs_tags for item in sublist])
+
+    return (profile_tags, pol_tags, freq_tags, time_tags, obs_tags)
+
+
+def update_summary(conv_f0_lower, conv_f0_upper,conv_f1_lower, conv_f1_upper, conv_age_lower, conv_age_upper, conv_bsurf_lower, conv_bsurf_upper, conv_edot_lower, conv_edot_upper, conv_rm_lower, conv_rm_upper, conv_dm_lower, conv_dm_upper, conv_dist_lower, conv_dist_upper, npulsars):
+    SUMMARY_TEXT.text = """
+    Number of pulsars in P-Pdot: {16} \n
+    F0: {0} Hz to {1} Hz \n
+    F1: ({2} to {3}) x1e-13 s^-2 \n
+    AGE: {4} Kyr to {5} Kyr \n
+    BSURF: ({6} to {7}) x1e10 G \n
+    EDOT: ({8} to {9}) x1e30 ergs/s \n
+    RM: {10} rad m^-2 to {11} rad m^-2 \n
+    DM: {12} cm^-3 pc to {13} cm^-3 pc \n
+    DIST: {14} kpc to {15} kpc \n
+    """.format(conv_f0_lower, conv_f0_upper,conv_f1_lower, conv_f1_upper, conv_age_lower, conv_age_upper, conv_bsurf_lower, conv_bsurf_upper, conv_edot_lower, conv_edot_upper, conv_rm_lower, conv_rm_upper, conv_dm_lower, conv_dm_upper, conv_dist_lower, conv_dist_upper, npulsars)
 
 def select_pulsars():
-    assoc_val = ASSOC.value
     selected = df[
-        (df.F0 >= F0.value) &
-        (df.F1 >= F1.value) &
-        (df.DM >= DM.value) &
-        #(df.RM >= np.abs(RM.value)) &
-        (df.DIST >= DIST.value) &
-        (df.AGE >= AGE.value) &
-        (df.BSURF >= BSURF.value) &
-        (df.EDOT >= EDOT.value)
+        (df.F0 >= F0.value[0]) & (df.F0 <= F0.value[1]) &
+        (df.F1 >= F1.value[0]) & (df.F1 <= F1.value[1]) &
+        (df.DM >= DM.value[0]) & (df.DM <= DM.value[1]) &
+        (df.RM >= RM.value[0]) & (df.RM <= RM.value[1]) &
+        (df.DIST >= DIST.value[0]) & (df.DIST <= DIST.value[1]) &
+        (df.AGE >= AGE.value[0]) & (df.AGE <= AGE.value[1]) &
+        (df.BSURF >= BSURF.value[0]) & (df.BSURF <= BSURF.value[1]) &
+        (df.EDOT >= EDOT.value[0]) & (df.EDOT <= EDOT.value[1])
     ]
 
-    if (assoc_val != "NA"):
-        selected = selected[selected.ASSOC.str.contains(assoc_val)==True]
+    assoc_vals = [str(r) for r in ASSOC.value]
+    type_vals = [str(r) for r in TYPE.value]
 
+    if not "NA" in assoc_vals:
+        selected = selected[selected['ASSOC'].str.contains('|'.join(assoc_vals),regex=True,na=False)]
+    if not "NA" in type_vals:
+        selected = selected[selected['TYPE'].str.contains('|'.join(type_vals),regex=True,na=False)]
+
+    #Obtaining selected tags
     profile_values = [str(r) for r in PROFILE.value]
     pol_values = [str(r) for r in POL.value]
     freq_values = [str(r) for r in FREQ.value]
     time_values = [str(r) for r in TIME.value]
     obs_values = [str(r) for r in OBS.value]
 
-    print '|'.join(profile_values)
     if not "Unclassified" in profile_values:
         selected = selected[selected['CATEGORY'].str.contains('|'.join(profile_values),regex=True,na=False)]
     if not "Unclassified" in pol_values:
@@ -187,22 +246,104 @@ def select_pulsars():
     if not "Unclassified" in obs_values:
         selected = selected[selected['CATEGORY'].str.contains('|'.join(obs_values),regex=True,na=False)]
 
-    conv_f1 = -10**(F1.value)
-    conv_age = 10**(AGE.value)
-    conv_bsurf = 10**(BSURF.value)
-    conv_edot = 10**(EDOT.value)
-    update_textboxes(conv_f1,conv_age,conv_bsurf,conv_edot)
+    conv_f0_lower = 10 ** (selected["F0"].min())
+    conv_f0_upper = 10 ** (selected["F0"].max())
+    conv_f1_lower = -10**(selected["F1"].min())
+    conv_f1_upper = -10 ** (selected["F1"].max())
+    conv_age_lower = 10**(selected["AGE"].min())
+    conv_age_upper = 10 ** (selected["AGE"].max())
+    conv_bsurf_lower = 10**(selected["BSURF"].min())
+    conv_bsurf_upper = 10**(selected["BSURF"].max())
+    conv_edot_lower = 10**(selected["EDOT"].min())
+    conv_edot_upper = 10**(selected["EDOT"].max())
+
+
+    #Updating the actual range sliders
+    F0.value=(selected["F0"].min(),selected["F0"].max())
+    F1.value=(selected["F1"].min(),selected["F1"].max())
+    DM.value=(selected["DM"].min(),selected["DM"].max())
+    RM.value=(selected["RM"].min(),selected["RM"].max())
+    DIST.value=(selected["DIST"].min(),selected["DIST"].max())
+    AGE.value=(selected["AGE"].min(),selected["AGE"].max())
+    BSURF.value=(selected["BSURF"].min(),selected["BSURF"].max())
+    EDOT.value=(selected["EDOT"].min(),selected["EDOT"].max())
+    ASSOC.options=selected["ASSOC"].unique().tolist()
+    TYPE.options = selected["TYPE"].unique().tolist()
+
+    #Return profile, pol, freq, time, obs, na
+    tags = get_tags(selected)
+    PROFILE.options = tags[0].tolist()
+    POL.options = tags[1].tolist()
+    FREQ.options = tags[2].tolist()
+    TIME.options = tags[3].tolist()
+    OBS.options = tags[4].tolist()
+
+    update_summary(conv_f0_lower, conv_f0_upper, conv_f1_lower, conv_f1_upper ,conv_age_lower, conv_age_upper, conv_bsurf_lower, conv_bsurf_upper, conv_edot_lower, conv_edot_upper,
+                   selected["RM"].min(), selected["RM"].max(), selected["DM"].min(), selected["DM"].max(), selected["DIST"].min(), selected["DIST"].max(), len(selected))
 
 
     return selected
 
+
+def reset_selection():
+    #Reset the range sliders
+    F0.value=(df["F0"].min(),df["F0"].max())
+    F1.value=(df["F1"].min(),df["F1"].max())
+    DM.value=(df["DM"].min(),df["DM"].max())
+    RM.value=(df["RM"].min(),df["RM"].max())
+    DIST.value=(df["DIST"].min(),df["DIST"].max())
+    AGE.value=(df["AGE"].min(),df["AGE"].max())
+    BSURF.value=(df["BSURF"].min(),df["BSURF"].max())
+    EDOT.value=(df["EDOT"].min(),df["EDOT"].max())
+    ASSOC.options=df["ASSOC"].unique().tolist()
+    TYPE.options = df["TYPE"].unique().tolist()
+
+    ASSOC.value=["NA"]
+    TYPE.value=["NA"]
+
+    conv_f0_lower = 10 ** (df["F0"].min())
+    conv_f0_upper = 10 ** (df["F0"].max())
+    conv_f1_lower = -10**(df["F1"].min())
+    conv_f1_upper = -10 ** (df["F1"].max())
+    conv_age_lower = 10**(df["AGE"].min())
+    conv_age_upper = 10 ** (df["AGE"].max())
+    conv_bsurf_lower = 10**(df["BSURF"].min())
+    conv_bsurf_upper = 10**(df["BSURF"].max())
+    conv_edot_lower = 10**(df["EDOT"].min())
+    conv_edot_upper = 10**(df["EDOT"].max())
+
+    #Reset the tags
+    PROFILE.options=tags["PROFILE"]
+    PROFILE.value=["Unclassified"]
+    POL.options=tags["POLARIZATION"]
+    POL.value = ["Unclassified"]
+    FREQ.options=tags["FREQUENCY"]
+    FREQ.value = ["Unclassified"]
+    TIME.options=tags["TIME"]
+    TIME.value = ["Unclassified"]
+    OBS.options=tags["OBSERVATION"]
+    OBS.value = ["Unclassified"]
+
+    update_summary(conv_f0_lower, conv_f0_upper, conv_f1_lower, conv_f1_upper ,conv_age_lower, conv_age_upper, conv_bsurf_lower, conv_bsurf_upper, conv_edot_lower, conv_edot_upper,
+                   df["RM"].min(), df["RM"].max(), df["DM"].min(), df["DM"].max(), df["DIST"].min(), df["DIST"].max(), len(df))
+
+    return df
+
+
 def update():
-    df = select_pulsars()
+    if not RESET_TOGGLE.active:
+        df = select_pulsars()
+    elif RESET_TOGGLE.active:
+        df = reset_selection()
+
     if not CATALOGUE.active:
         source_data(df)
     else:
         df = df.append(df_cat,sort=True)
         source_data(df)
+
+    if len(source.selected.indices) > 0:
+        print df.iloc[source.selected.indices,:]
 
 def source_data(dataframe):
 
@@ -234,6 +375,7 @@ def source_data(dataframe):
         RM=df["RM"],
         DIST=df["DIST"],
         ASSOC=df["ASSOC"],
+        TYPE=df["TYPE"],
         PB=df["PB"],
         BINCOMP=df["BINCOMP"],
         AGE=df["AGE"],
@@ -247,12 +389,10 @@ def source_data(dataframe):
         CATEGORY=df["CATEGORY"],
     )
 
-
-controls = [F0,F1,DM,RM,DIST,AGE,BSURF,EDOT,ASSOC]
+controls = [F0,F1,DM,RM,DIST,AGE,BSURF,EDOT,ASSOC,TYPE]
 for control in controls:
     control.on_change('value', lambda attr, old, new: update())
 inputs = column(*controls)
-inputs_status = row(inputs,status)
 
 categories = [PROFILE,POL,FREQ,TIME,OBS]
 for category in categories:
@@ -261,18 +401,16 @@ category_inputs = column(PROFILE,POL)
 category_inputs1 = column(FREQ,TIME)
 category_inputs_all = row(category_inputs,category_inputs1,OBS)
 
-text_boxes = [F1_TEXT,AGE_TEXT,BSURF_TEXT,EDOT_TEXT]
-texts = column(*text_boxes)
+sliders_textboxes = row(inputs,SUMMARY_TEXT)
+buttons_toggles_row = row(RESET_TOGGLE,CATALOGUE,UPDATE)
+sliders_texts = column(sliders_textboxes,buttons_toggles_row,category_inputs_all)
 
 UPDATE.on_click(update)
 
-sliders_texts = column(inputs_status,texts,category_inputs_all,CATALOGUE)
-plot_update = column(p,UPDATE)
-
-#p.on_event(DoubleTap,update) #Disabled for now
+p.on_event(Tap,update)
 
 l = layout([
-    [plot_update,sliders_texts],
+    [p,sliders_texts],
 ],sizing_mode='scale_width')
 
 update()  # initial load of the data

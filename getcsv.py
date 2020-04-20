@@ -32,7 +32,7 @@ else:
     df_cat = query.catalogue
     df_cat = df_cat[['JNAME','BNAME','RAJ','RAJ_ERR','DECJ','DECJ_ERR','F0','F0_ERR','F1','F1_ERR','P0','P0_ERR',
     'P1','P1_ERR','DM','DM_ERR','RM','RM_ERR','DIST','ASSOC','PB','PB_ERR','BINCOMP','AGE',
-    'BSURF','EDOT','NGLT']]
+    'BSURF','EDOT','NGLT','TYPE']]
     #Removing TPA pulsars from the full catalogue pickle file
     indices = df_cat[df_cat["JNAME"].isin(psrlist)].index
     df_cat.drop(indices,inplace=True)
@@ -43,7 +43,7 @@ else:
     #Rearranging the dataframe columns
     df = df[['JNAME','BNAME','RAJ','RAJ_ERR','DECJ','DECJ_ERR','F0','F0_ERR','F1','F1_ERR','P0','P0_ERR',
     'P1','P1_ERR','DM','DM_ERR','RM','RM_ERR','DIST','ASSOC','PB','PB_ERR','BINCOMP','AGE',
-    'BSURF','EDOT','NGLT']]
+    'BSURF','EDOT','NGLT','TYPE']]
 
     #print df.columns
 
@@ -56,7 +56,7 @@ else:
 
         if not fname == "category_file":
             colname = fname.split("_")[0]+"_MK"
-            custom_df = pd.read_csv(fpath,sep=" ",names=['JNAME',colname],comment="#")
+            custom_df = pd.read_csv(fpath,sep=" ",names=['JNAME',colname],comment="#", dtype=str)
         else:
             colname = fname.split("_")[0]
             custom_df = pd.read_csv(fpath,sep=',',names=["JNAME","USER","COMMENTS","CATEGORY"],comment="#")

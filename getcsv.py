@@ -57,9 +57,14 @@ else:
         if not fname == "category_file":
             colname = fname.split("_")[0]+"_MK"
             custom_df = pd.read_csv(fpath,sep=" ",names=['JNAME',colname],comment="#", dtype=str)
+            #Removing pulsars not in tpa_psrs.list
+            custom_df = custom_df[custom_df['JNAME'].isin(df["JNAME"].tolist())]
+
         else:
             colname = fname.split("_")[0]
             custom_df = pd.read_csv(fpath,sep=',',names=["JNAME","USER","COMMENTS","CATEGORY"],comment="#")
+            #Removing pulsar not in tpa_psrs.list
+            custom_df = custom_df[custom_df['JNAME'].isin(df["JNAME"].tolist())]
 
             #print custom_df
 

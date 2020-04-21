@@ -20,7 +20,7 @@ import pandas as pd
 from bokeh.io import curdoc
 from bokeh.layouts import column, layout, row
 from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, \
-    OpenURL, TapTool, MultiSelect, RangeSlider, DataTable, DateFormatter, TableColumn
+    OpenURL, TapTool, MultiSelect, RangeSlider, DataTable, DateFormatter, TableColumn, Panel, Tabs
 from bokeh.plotting import figure
 from bokeh.events import DoubleTap, Tap
 
@@ -38,11 +38,35 @@ args = parser.parse_args()
 df = pd.read_pickle(str(args.load_pickle)) #Custom TPA pulsar list
 df_cat = pd.read_pickle(str(args.psrcat)) #Full catalogue pulsar list
 
+
+##################################### FULL CATALOGUE ####################################
 #Setting attributes for df_cat
 df_cat["color"] = "#7f8c8d"
 df_cat["alpha"] = 0.6
 df_cat["size"] = 7
+#Replacing empty,NAN cells
+df_cat["ASSOC"].fillna("NA",inplace=True)
+df_cat["BNAME"].fillna("NA",inplace=True)
+df_cat["TYPE"].fillna("NA",inplace=True)
+df_cat["DM"].fillna("0.0",inplace=True)
+df_cat["RM"].fillna("0.0",inplace=True)
+df_cat["DIST"].fillna("0.0",inplace=True)
 
+#Normalising relevant columns
+df_cat["F1"] = df_cat["F1"]/10**-13
+df_cat["AGE"] = df_cat["AGE"]/10**3
+df_cat["BSURF"] = df_cat["BSURF"]/10**10
+df_cat["EDOT"] = df_cat["EDOT"]/10**30
+
+#Converting to log-scale
+df_cat["F0"] = np.log10(df_cat["F0"]).astype("float64")
+df_cat["F1"] = np.log10(abs(df_cat["F1"]).astype("float64"))
+df_cat["AGE"] = np.log10(df_cat["AGE"].astype("float64"))
+df_cat["BSURF"] = np.log10(df_cat["BSURF"].astype("float64"))
+df_cat["EDOT"] = np.log10(df_cat["EDOT"].astype("float64"))
+
+
+##################################### TPA PULSARS ####################################
 #Set color and alpha
 df["color"] = np.where(df["DM"] > 0, "#3498db", "grey")
 df["alpha"] = np.where(df["DM"] > 0, 0.9, 0.25)
@@ -57,7 +81,6 @@ df["COMMENTS"].fillna("NA",inplace=True)
 df["DM"].fillna("0.0",inplace=True)
 df["RM"].fillna("0.0",inplace=True)
 df["DIST"].fillna("0.0",inplace=True)
-
 
 #Converting columns to appropriate data types
 df["DM"] = pd.to_numeric(df["DM"], downcast="float")
@@ -89,6 +112,9 @@ df["F1"] = np.log10(abs(df["F1"]).astype("float64"))
 df["AGE"] = np.log10(df["AGE"].astype("float64"))
 df["BSURF"] = np.log10(df["BSURF"].astype("float64"))
 df["EDOT"] = np.log10(df["EDOT"].astype("float64"))
+
+
+
 
 #Getting pre-defined tag list
 tags = {}
@@ -148,14 +174,27 @@ p.circle(x="P0", y="P1", source=source, size='size', color="color", line_color=N
 
 
 #Sub-figures
-x_axis = Select(title="X-axis",options=list(df.columns.values),value='P0')
+x_axis = Select(title="X-axis (also used for histograms)",options=list(df.columns.values),value='P0')
 y_axis = Select(title="Y-axis", options=list(df.columns.values),value='P1')
 x_axis_scale = Select(title="XScale",options=["log","linear"],value='log')
 y_axis_scale = Select(title="YScale", options=["log","linear"],value='log')
 
 scatter = figure(plot_height=400, plot_width=650, title="", sizing_mode="fixed",tools=TOOLS)
-scatter.circle(x='x', y= 'y', source=source, size=6, color="#8e44ad", line_color=None, fill_alpha="alpha")
+scatter.circle(x='x', y= 'y', source=source, size=6, color="color", line_color=None, fill_alpha=0.9)
+tab1 = Panel(child=scatter,title="Scatter plot")
 
+histogram_source = ColumnDataSource(data=dict(hist=[],edges_left=[],edges_right=[],hist_all=[],edges_left_all=[],
+                                              edges_right_all=[]))
+histogram = figure(plot_height=400, plot_width=650, title="", sizing_mode="fixed",tools=TOOLS)
+
+histogram.quad(top='hist', bottom=0, left='edges_left', right='edges_right', source=histogram_source, fill_color="#e74c3c",
+               line_color=None, alpha=0.9)
+
+tab2 = Panel(child=histogram,title="Histogram plot")
+
+tabs = Tabs(tabs=[tab1,tab2])
+
+#Table
 table_columns=[
     TableColumn(field="jname", title="PSRNAME"),
     TableColumn(field="profile", title="PROFILE"),
@@ -361,12 +400,14 @@ def update():
     if not CATALOGUE.active:
         source_data(df)
     else:
-        df = df.append(df_cat,sort=True)
+        df= df.append(df_cat,sort=True)
         source_data(df)
 
 def source_data(dataframe):
 
     df = dataframe
+
+    #Ppdot plot
     p.xaxis.axis_label = "log(P0)"
     p.yaxis.axis_label = "log(P1)"
     p.xaxis.axis_label_text_font_size = '20pt'
@@ -378,7 +419,6 @@ def source_data(dataframe):
 
     p.title.text = "P-Pdot"
     p.title.text_font_size = '20pt'
-
 
     #Scatter plot
     x_name = str(x_axis.value)
@@ -397,11 +437,25 @@ def source_data(dataframe):
 
     x_values = df[x_name]
     if x_axis_scale.value == "log":
-        x_values = np.log10(df[x_name])
+        x_values = np.log10(df[x_name].astype("float64"))
 
     y_values = df[y_name]
     if y_axis_scale.value == "log":
-        y_values = np.log10(df[y_name])
+        y_values = np.log10(df[y_name].astype("float64"))
+
+
+    #Histogram plot
+    histogram.xaxis.axis_label = "{0}".format(x_name)
+    histogram.yaxis.axis_label = "Pr(x)"
+    histogram.xaxis.axis_label_text_font_size = '12pt'
+    histogram.yaxis.axis_label_text_font_size = '12pt'
+    histogram.xaxis.axis_label_text_font_style = "bold"
+    histogram.yaxis.axis_label_text_font_style = "bold"
+    histogram.xaxis.major_label_text_font_size = '12pt'
+    histogram.yaxis.major_label_text_font_size = '12pt'
+
+    df[x_name] = df[x_name].astype("float64")
+    hist, edges = np.histogram(df[x_name][~np.isnan(df[x_name])],density=True,bins='auto')
 
     source.data = dict(
         P0=df["P0"],
@@ -431,8 +485,14 @@ def source_data(dataframe):
         w50_MK=df["w50_MK"],
         w10_MK=df["w10_MK"],
         CATEGORY=df["CATEGORY"],
-        x = x_values,
-        y = y_values,
+        x=x_values,
+        y=y_values,
+    )
+
+    histogram_source.data = dict(
+        hist=hist,
+        edges_left=edges[:-1],
+        edges_right=edges[1:],
     )
 
     if len(source.selected.indices) > 0:
@@ -505,7 +565,7 @@ selected_plot_source.selected.on_change('indices', lambda attr, old, new: update
 
 scatter_axes = row(x_axis,y_axis)
 scatter_axes_scale = row(x_axis_scale,y_axis_scale)
-figures = column(p,scatter_axes,scatter_axes_scale,scatter)
+figures = column(p,scatter_axes,scatter_axes_scale,tabs)
 
 l = layout([
     [figures,sliders_texts],

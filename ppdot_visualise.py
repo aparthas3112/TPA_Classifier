@@ -19,7 +19,8 @@ import pandas as pd
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, layout, row
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, OpenURL, TapTool, MultiSelect, RangeSlider
+from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, PreText, Button, Toggle, \
+    OpenURL, TapTool, MultiSelect, RangeSlider, DataTable, DateFormatter, TableColumn
 from bokeh.plotting import figure
 from bokeh.events import DoubleTap, Tap
 
@@ -57,10 +58,6 @@ df["DM"].fillna("0.0",inplace=True)
 df["RM"].fillna("0.0",inplace=True)
 df["DIST"].fillna("0.0",inplace=True)
 
-#print len(df)
-#print df.columns
-#print df["JNAME"],df["F0"]
-#sys.exit()
 
 #Converting columns to appropriate data types
 df["DM"] = pd.to_numeric(df["DM"], downcast="float")
@@ -120,14 +117,6 @@ TYPE = MultiSelect(title="Type", options=df["TYPE"].unique().tolist(), value=["N
 SUMMARY_TEXT = PreText(text='', width=500)
 RESET_TOGGLE = Toggle(label="Reset selections", width=150, button_type='warning')
 
-status = PreText(text="""TODO:
-1. Make P-Pdot plot more useful.
-2. Add user comments.
-3. Discuss classification tags.
-4. Feedback.                     
-5. Add histograms.
-""", width=500)
-
 CATALOGUE = Toggle(label="Toggle catalogue", width=150, button_type="warning")
 UPDATE = Button(label="Update",width=150, button_type="success")
 
@@ -137,9 +126,11 @@ FREQ = MultiSelect(title="Frequency tags", options=tags["FREQUENCY"], value=["Un
 TIME = MultiSelect(title="Time tags", options=tags["TIME"], value=["Unclassified"],height=200)
 OBS = MultiSelect(title="Observation tags", options=tags["OBSERVATION"], value=["Unclassified"],height=200)
 
+URL_TEXT = Div(text='',width=500)
 
 # Create Column Data Source that will be used by the plot
 source = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
+selected_plot_source = ColumnDataSource(data=dict(jname=[],profile=[],pol=[],freq=[],time=[],obs=[],comments=[]))
 
 TOOLS = 'pan,wheel_zoom,xbox_select,box_zoom,lasso_select,undo,redo,save,reset,tap'
 TOOLTIPS=[
@@ -151,9 +142,32 @@ TOOLTIPS=[
     ("NGLT", "@NGLT"),
 ]
 
-p = figure(plot_height=1000, plot_width=900, title="", tooltips=TOOLTIPS, sizing_mode="scale_both",y_axis_type="log",
+p = figure(plot_height=800, plot_width=700, title="", tooltips=TOOLTIPS, sizing_mode="scale_both",y_axis_type="log",
            x_axis_type="log",tools=TOOLS)
 p.circle(x="P0", y="P1", source=source, size='size', color="color", line_color=None, fill_alpha="alpha")
+
+
+#Sub-figures
+x_axis = Select(title="X-axis",options=list(df.columns.values),value='P0')
+y_axis = Select(title="Y-axis", options=list(df.columns.values),value='P1')
+x_axis_scale = Select(title="XScale",options=["log","linear"],value='log')
+y_axis_scale = Select(title="YScale", options=["log","linear"],value='log')
+
+scatter = figure(plot_height=400, plot_width=650, title="", sizing_mode="fixed",tools=TOOLS)
+scatter.circle(x='x', y= 'y', source=source, size=6, color="#8e44ad", line_color=None, fill_alpha="alpha")
+
+table_columns=[
+    TableColumn(field="jname", title="PSRNAME"),
+    TableColumn(field="profile", title="PROFILE"),
+    TableColumn(field="pol", title="POLARIZATION"),
+    TableColumn(field="freq", title="FREQUENCY"),
+    TableColumn(field="time", title="TIME"),
+    TableColumn(field="obs", title="OBSERVATION"),
+    TableColumn(field="comments", title="COMMENTS"),
+]
+SELECTION_TABLE = DataTable(source=selected_plot_source, columns=table_columns,width=650,height=200,
+                            fit_columns=True,reorderable=True,scroll_to_selection=True,sortable=True,
+                            selectable=True)
 
 
 def get_tags(dataframe):
@@ -191,6 +205,12 @@ def get_tags(dataframe):
     freq_tags = np.unique([item for sublist in freq_tags for item in sublist])
     time_tags = np.unique([item for sublist in time_tags for item in sublist])
     obs_tags = np.unique([item for sublist in obs_tags for item in sublist])
+
+    profile_tags = [str(x).rstrip() for x in profile_tags]
+    pol_tags = [str(x).rstrip() for x in pol_tags]
+    freq_tags = [str(x).rstrip() for x in freq_tags]
+    time_tags = [str(x).rstrip() for x in time_tags]
+    obs_tags = [str(x).rstrip() for x in obs_tags]
 
     return (profile_tags, pol_tags, freq_tags, time_tags, obs_tags)
 
@@ -272,11 +292,11 @@ def select_pulsars():
 
     #Return profile, pol, freq, time, obs, na
     tags = get_tags(selected)
-    PROFILE.options = tags[0].tolist()
-    POL.options = tags[1].tolist()
-    FREQ.options = tags[2].tolist()
-    TIME.options = tags[3].tolist()
-    OBS.options = tags[4].tolist()
+    PROFILE.options = np.unique(tags[0]).tolist()
+    POL.options = np.unique(tags[1]).tolist()
+    FREQ.options = np.unique(tags[2]).tolist()
+    TIME.options = np.unique(tags[3]).tolist()
+    OBS.options = np.unique(tags[4]).tolist()
 
     update_summary(conv_f0_lower, conv_f0_upper, conv_f1_lower, conv_f1_upper ,conv_age_lower, conv_age_upper, conv_bsurf_lower, conv_bsurf_upper, conv_edot_lower, conv_edot_upper,
                    selected["RM"].min(), selected["RM"].max(), selected["DM"].min(), selected["DM"].max(), selected["DIST"].min(), selected["DIST"].max(), len(selected))
@@ -327,6 +347,8 @@ def reset_selection():
     update_summary(conv_f0_lower, conv_f0_upper, conv_f1_lower, conv_f1_upper ,conv_age_lower, conv_age_upper, conv_bsurf_lower, conv_bsurf_upper, conv_edot_lower, conv_edot_upper,
                    df["RM"].min(), df["RM"].max(), df["DM"].min(), df["DM"].max(), df["DIST"].min(), df["DIST"].max(), len(df))
 
+
+    #selected_plot_source.data = dict(jname=[], profile=[], pol=[], freq=[], time=[], obs=[], comments=[])
     return df
 
 
@@ -342,9 +364,6 @@ def update():
         df = df.append(df_cat,sort=True)
         source_data(df)
 
-    if len(source.selected.indices) > 0:
-        print df.iloc[source.selected.indices,:]
-
 def source_data(dataframe):
 
     df = dataframe
@@ -359,6 +378,31 @@ def source_data(dataframe):
 
     p.title.text = "P-Pdot"
     p.title.text_font_size = '20pt'
+
+
+    #Scatter plot
+    x_name = str(x_axis.value)
+    y_name = str(y_axis.value)
+    scatter.xaxis.axis_label = "{0}({1})".format(x_name,x_axis_scale.value)
+    scatter.yaxis.axis_label = "{0}({1})".format(y_name,y_axis_scale.value)
+    scatter.xaxis.axis_label_text_font_size = '12pt'
+    scatter.yaxis.axis_label_text_font_size = '12pt'
+    scatter.xaxis.axis_label_text_font_style = "bold"
+    scatter.yaxis.axis_label_text_font_style = "bold"
+    scatter.xaxis.major_label_text_font_size = '12pt'
+    scatter.yaxis.major_label_text_font_size = '12pt'
+
+    scatter.title.text = "{0} vs {1}".format(x_name,y_name)
+    scatter.title.text_font_size = '10pt'
+
+    x_values = df[x_name]
+    if x_axis_scale.value == "log":
+        x_values = np.log10(df[x_name])
+
+    y_values = df[y_name]
+    if y_axis_scale.value == "log":
+        y_values = np.log10(df[y_name])
+
     source.data = dict(
         P0=df["P0"],
         P1=df["P1"],
@@ -387,7 +431,54 @@ def source_data(dataframe):
         w50_MK=df["w50_MK"],
         w10_MK=df["w10_MK"],
         CATEGORY=df["CATEGORY"],
+        x = x_values,
+        y = y_values,
     )
+
+    if len(source.selected.indices) > 0:
+        selected_plot =  df.iloc[source.selected.indices,:]
+        selected_tags = selected_plot["CATEGORY"].tolist()
+        name = []
+        profile =[]
+        pol = []
+        freq = []
+        time = []
+        obs = []
+        comments=[]
+        for num,item in enumerate(selected_tags):
+            name.append(selected_plot["JNAME"].iloc[num])
+            comments.append(selected_plot["COMMENTS"].iloc[num])
+            if not item == "Unclassified":
+                tmp = item.split(";")
+                for item1 in tmp:
+                    item2 = item1.split(":")
+                    if item2[0] == "PROFILE":
+                        profile.append(item2[-1].split(":")[-1])
+                    if item2[0] == "POLARIZATION":
+                        pol.append(item2[-1].split(":")[-1])
+                    if item2[0] == "FREQUENCY":
+                        freq.append(item2[-1].split(":")[-1])
+                    if item2[0] == "TIME":
+                        time.append(item2[-1].split(":")[-1])
+                    if item2[0] == "OBSERVATION":
+                        obs.append(item1.split(":")[-1])
+            else:
+                profile.append("Unclassified")
+                pol.append("Unclassified")
+                freq.append("Unclassified")
+                time.append("Unclassified")
+                obs.append("Unclassified")
+
+        selected_plot_source.data = dict(jname=name,profile=profile,pol=pol,
+                                         freq=freq,time=time,obs=obs,
+                                         comments=comments)
+
+    if len(selected_plot_source.selected.indices) > 0:
+        psrname = selected_plot_source.data["jname"][selected_plot_source.selected.indices[0]]
+        URL_TEXT.text = """<a href='https://www.atnf.csiro.au/people/joh414/meerkat/{0}.html'>
+        https://www.atnf.csiro.au/people/joh414/meerkat/{0}.html</a>""".format(psrname)
+
+
 
 controls = [F0,F1,DM,RM,DIST,AGE,BSURF,EDOT,ASSOC,TYPE]
 for control in controls:
@@ -401,16 +492,23 @@ category_inputs = column(PROFILE,POL)
 category_inputs1 = column(FREQ,TIME)
 category_inputs_all = row(category_inputs,category_inputs1,OBS)
 
-sliders_textboxes = row(inputs,SUMMARY_TEXT)
-buttons_toggles_row = row(RESET_TOGGLE,CATALOGUE,UPDATE)
+
+SUMMARY = column(SUMMARY_TEXT,SELECTION_TABLE)
+sliders_textboxes = row(inputs,SUMMARY)
+buttons_toggles_row = row(RESET_TOGGLE,CATALOGUE,UPDATE,URL_TEXT)
 sliders_texts = column(sliders_textboxes,buttons_toggles_row,category_inputs_all)
 
 UPDATE.on_click(update)
 
 p.on_event(Tap,update)
+selected_plot_source.selected.on_change('indices', lambda attr, old, new: update())
+
+scatter_axes = row(x_axis,y_axis)
+scatter_axes_scale = row(x_axis_scale,y_axis_scale)
+figures = column(p,scatter_axes,scatter_axes_scale,scatter)
 
 l = layout([
-    [p,sliders_texts],
+    [figures,sliders_texts],
 ],sizing_mode='scale_width')
 
 update()  # initial load of the data

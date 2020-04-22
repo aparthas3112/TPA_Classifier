@@ -42,8 +42,8 @@ df_cat = pd.read_pickle(str(args.psrcat)) #Full catalogue pulsar list
 ##################################### FULL CATALOGUE ####################################
 #Setting attributes for df_cat
 df_cat["color"] = "#7f8c8d"
-df_cat["alpha"] = 0.6
-df_cat["size"] = 7
+df_cat["alpha"] = 0.5
+df_cat["size"] = 6
 #Replacing empty,NAN cells
 df_cat["ASSOC"].fillna("NA",inplace=True)
 df_cat["BNAME"].fillna("NA",inplace=True)
@@ -156,6 +156,8 @@ URL_TEXT = Div(text='',width=500)
 
 # Create Column Data Source that will be used by the plot
 source = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
+source_all = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
+
 selected_plot_source = ColumnDataSource(data=dict(jname=[],profile=[],pol=[],freq=[],time=[],obs=[],comments=[]))
 
 TOOLS = 'pan,wheel_zoom,xbox_select,box_zoom,lasso_select,undo,redo,save,reset,tap'
@@ -168,9 +170,17 @@ TOOLTIPS=[
     ("NGLT", "@NGLT"),
 ]
 
-p = figure(plot_height=800, plot_width=700, title="", tooltips=TOOLTIPS, sizing_mode="scale_both",y_axis_type="log",
+TOOLTIPS_MINIMAL=[
+    ("JNAME","@JNAME"),
+    ("DM", "@DM"),
+    ("RM", "@RM"),
+]
+
+
+p = figure(plot_height=800, plot_width=700, title="", tooltips=TOOLTIPS_MINIMAL, sizing_mode="scale_width",y_axis_type="log",
            x_axis_type="log",tools=TOOLS)
 p.circle(x="P0", y="P1", source=source, size='size', color="color", line_color=None, fill_alpha="alpha")
+p.circle(x="P0", y="P1", source=source_all, size='size', color="color", line_color=None, fill_alpha="alpha")
 
 
 #Sub-figures
@@ -179,20 +189,20 @@ y_axis = Select(title="Y-axis", options=list(df.columns.values),value='P1')
 x_axis_scale = Select(title="XScale",options=["log","linear"],value='log')
 y_axis_scale = Select(title="YScale", options=["log","linear"],value='log')
 
-scatter = figure(plot_height=400, plot_width=650, title="", sizing_mode="fixed",tools=TOOLS)
+scatter = figure(plot_height=400, plot_width=650, title="", sizing_mode="scale_width",tools=TOOLS)
 scatter.circle(x='x', y= 'y', source=source, size=6, color="color", line_color=None, fill_alpha=0.9)
 tab1 = Panel(child=scatter,title="Scatter plot")
 
 histogram_source = ColumnDataSource(data=dict(hist=[],edges_left=[],edges_right=[],hist_all=[],edges_left_all=[],
                                               edges_right_all=[]))
-histogram = figure(plot_height=400, plot_width=650, title="", sizing_mode="fixed",tools=TOOLS)
+histogram = figure(plot_height=400, plot_width=650, title="", sizing_mode="scale_width",tools=TOOLS)
 
 histogram.quad(top='hist', bottom=0, left='edges_left', right='edges_right', source=histogram_source, fill_color="#e74c3c",
                line_color=None, alpha=0.9)
 
 tab2 = Panel(child=histogram,title="Histogram plot")
 
-tabs = Tabs(tabs=[tab1,tab2])
+tabs = Tabs(tabs=[tab2,tab1])
 
 #Table
 table_columns=[
@@ -204,9 +214,9 @@ table_columns=[
     TableColumn(field="obs", title="OBSERVATION"),
     TableColumn(field="comments", title="COMMENTS"),
 ]
-SELECTION_TABLE = DataTable(source=selected_plot_source, columns=table_columns,width=650,height=200,
+SELECTION_TABLE = DataTable(source=selected_plot_source, columns=table_columns,width=900,height=600,
                             fit_columns=True,reorderable=True,scroll_to_selection=True,sortable=True,
-                            selectable=True)
+                            selectable=True, sizing_mode='fixed')
 
 
 def get_tags(dataframe):
@@ -256,7 +266,7 @@ def get_tags(dataframe):
 
 def update_summary(conv_f0_lower, conv_f0_upper,conv_f1_lower, conv_f1_upper, conv_age_lower, conv_age_upper, conv_bsurf_lower, conv_bsurf_upper, conv_edot_lower, conv_edot_upper, conv_rm_lower, conv_rm_upper, conv_dm_lower, conv_dm_upper, conv_dist_lower, conv_dist_upper, npulsars):
     SUMMARY_TEXT.text = """
-    Number of pulsars in P-Pdot: {16} \n
+    Number of TPA pulsars in P-Pdot: {16} \n
     F0: {0} Hz to {1} Hz \n
     F1: ({2} to {3}) x1e-13 s^-2 \n
     AGE: {4} Kyr to {5} Kyr \n
@@ -398,14 +408,15 @@ def update():
         df = reset_selection()
 
     if not CATALOGUE.active:
-        source_data(df)
+        source_data(df,df)
     else:
-        df= df.append(df_cat,sort=True)
-        source_data(df)
+        #df_all = df.append(df_cat,sort=True)
+        source_data(df,df_cat)
 
-def source_data(dataframe):
+def source_data(dataframe,dataframe1):
 
     df = dataframe
+    df_cat = dataframe1
 
     #Ppdot plot
     p.xaxis.axis_label = "log(P0)"
@@ -489,6 +500,31 @@ def source_data(dataframe):
         y=y_values,
     )
 
+    source_all.data = dict(
+        P0=df_cat["P0"],
+        P1=df_cat["P1"],
+        color=df_cat["color"],
+        alpha=df_cat["alpha"],
+        size=df_cat["size"],
+        JNAME=df_cat["JNAME"],
+        BNAME=df_cat["BNAME"],
+        RAJ=df_cat["RAJ"],
+        DECJ=df_cat["DECJ"],
+        F0=df_cat["F0"],
+        F1=df_cat["F1"],
+        DM=df_cat["DM"],
+        RM=df_cat["RM"],
+        DIST=df_cat["DIST"],
+        ASSOC=df_cat["ASSOC"],
+        TYPE=df_cat["TYPE"],
+        PB=df_cat["PB"],
+        BINCOMP=df_cat["BINCOMP"],
+        AGE=df_cat["AGE"],
+        BSURF=df_cat["BSURF"],
+        EDOT=df_cat["EDOT"],
+        NGLT=df_cat["NGLT"],
+    )
+
     histogram_source.data = dict(
         hist=hist,
         edges_left=edges[:-1],
@@ -541,22 +577,25 @@ def source_data(dataframe):
 
 
 controls = [F0,F1,DM,RM,DIST,AGE,BSURF,EDOT,ASSOC,TYPE]
-for control in controls:
-    control.on_change('value', lambda attr, old, new: update())
+#for control in controls:
+#    control.on_change('value', lambda attr, old, new: update())
 inputs = column(*controls)
 
 categories = [PROFILE,POL,FREQ,TIME,OBS]
-for category in categories:
-    category.on_change('value', lambda attr, old, new: update())
+#for category in categories:
+#    category.on_change('value', lambda attr, old, new: update())
 category_inputs = column(PROFILE,POL)
-category_inputs1 = column(FREQ,TIME)
-category_inputs_all = row(category_inputs,category_inputs1,OBS)
+category_inputs1 = row(FREQ,TIME,OBS)
+#category_inputs_all = column(category_inputs,category_inputs1)
 
 
 SUMMARY = column(SUMMARY_TEXT,SELECTION_TABLE)
-sliders_textboxes = row(inputs,SUMMARY)
+#sliders_textboxes = row(inputs,SUMMARY)
 buttons_toggles_row = row(RESET_TOGGLE,CATALOGUE,UPDATE,URL_TEXT)
-sliders_texts = column(sliders_textboxes,buttons_toggles_row,category_inputs_all)
+
+inputs_category1 = column(inputs,category_inputs)
+inputs_category1_summary_row = row(inputs_category1,SUMMARY)
+sliders_texts = column(inputs_category1_summary_row,category_inputs1,buttons_toggles_row)
 
 UPDATE.on_click(update)
 

@@ -74,6 +74,6 @@ else:
         df.to_pickle(args.save+".pckl")
         df.to_csv(args.save+".csv",index=False)
 
-print "Dataframe saved"
+print ("Dataframe saved")
 #print df
 

@@ -27,7 +27,7 @@ import shlex,glob
 
 #from selenium import webdriver
 #from selenium.webdriver.chrome.options import Options
-#from PIL import Image
+from PIL import Image
 
 
 
@@ -174,8 +174,7 @@ def update():
         if not os.path.exists(os.path.join(current_path,"webshots/{0}.png".format(selected_psr))):
             save_path = capture_screenshot(url)
         elif getlatest.active:
-            pass
-            #save_path = capture_screenshot(url)
+            save_path = os.path.join(current_path,"webshots/{0}.png".format(selected_psr))
         else:
             save_path = os.path.join(current_path,"webshots/{0}.png".format(selected_psr))
 

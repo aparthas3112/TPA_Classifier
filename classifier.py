@@ -25,9 +25,9 @@ from bokeh.plotting import figure
 import argparse
 import shlex,glob
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from PIL import Image
+#from selenium import webdriver
+#from selenium.webdriver.chrome.options import Options
+#from PIL import Image
 
 
 
@@ -75,7 +75,7 @@ observation_tags = CheckboxButtonGroup(labels=tags["OBSERVATION"],active=[])
 apply_tags = Button(label="Apply tags", button_type="success")
 save = Button(label="Save tags", button_type="success")
 comments = TextAreaInput(value="",title="User comments",rows=6)
-getlatest = Toggle(label="Get latest webshot", button_type="primary")
+getlatest = Toggle(label="Get latest webshot (disabled)", button_type="primary")
 
 
 def get_url(psrname):
@@ -174,7 +174,8 @@ def update():
         if not os.path.exists(os.path.join(current_path,"webshots/{0}.png".format(selected_psr))):
             save_path = capture_screenshot(url)
         elif getlatest.active:
-            save_path = capture_screenshot(url)
+            pass
+            #save_path = capture_screenshot(url)
         else:
             save_path = os.path.join(current_path,"webshots/{0}.png".format(selected_psr))
 

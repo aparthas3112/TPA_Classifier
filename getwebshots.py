@@ -2,6 +2,10 @@
 import os,sys
 import numpy as np
 
+print "Disabled in the distibution version. Need chromedrivers and selenium installed for this."
+sys.exit()
+
+"""
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -43,3 +47,4 @@ for psr in psrlist:
     driver.save_screenshot(save_path)
     driver.close()
     print "Screenshot taken for {0}".format(psr)
+"""

@@ -27,7 +27,7 @@ import shlex,glob
 
 #from selenium import webdriver
 #from selenium.webdriver.chrome.options import Options
-#from PIL import Image
+from PIL import Image
 
 
 
@@ -72,7 +72,7 @@ pol_tags = CheckboxButtonGroup(labels=tags["POLARIZATION"],active=[])
 freq_tags = CheckboxButtonGroup(labels=tags["FREQUENCY"],active=[])
 time_tags = CheckboxButtonGroup(labels=tags["TIME"],active=[])
 observation_tags = CheckboxButtonGroup(labels=tags["OBSERVATION"],active=[])
-apply_tags = Button(label="Apply tags", button_type="success")
+apply_tags = Button(label="View tags (before saving)", button_type="success")
 save = Button(label="Save tags", button_type="success")
 comments = TextAreaInput(value="",title="User comments",rows=6)
 getlatest = Toggle(label="Get latest webshot (disabled)", button_type="primary")
@@ -114,7 +114,7 @@ def capture_screenshot(url):
 
 def check_classification_history(psr):
     #Checking if pulsar already classified
-    classified_list_path = os.path.join(current_path,"measured_parameters/category.list")
+    classified_list_path = os.path.join(current_path,"measured_parameters/category_{0}.list".format(username.value.rstrip()))
     if os.path.exists(classified_list_path):
         category=[]
         comments=[]
@@ -237,7 +237,7 @@ def update_save():
 
     category = "PROFILE:{0};POLARIZATION:{1};FREQUENCY:{2};TIME:{3};OBSERVATION:{4}".format(profile_vals,pol_vals,freq_vals,time_vals,observation_vals)
 
-    with open (os.path.join(current_path,"measured_parameters/category.list"),"a") as f:
+    with open (os.path.join(current_path,"measured_parameters/category_{0}.list".format(username_str.rstrip())),"a") as f:
         f.write("{0},{1},{2},{3} \n".format(psrname,username_str.rstrip(),comments_str.rstrip(),category))
     f.close()
     tags_text.text="Saved tags."

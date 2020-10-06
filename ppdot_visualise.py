@@ -158,7 +158,7 @@ URL_TEXT = Div(text='',width=500)
 source = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
 source_all = ColumnDataSource(data=dict(x=[], y=[], color=[], alpha=[],))
 
-selected_plot_source = ColumnDataSource(data=dict(jname=[],profile=[],pol=[],freq=[],time=[],obs=[],comments=[]))
+selected_plot_source = ColumnDataSource(data=dict(jname=[],profile=[],pol=[],freq=[],time=[],obs=[],comments=[],user=[]))
 
 TOOLS = 'pan,wheel_zoom,xbox_select,box_zoom,lasso_select,undo,redo,save,reset,tap'
 TOOLTIPS=[
@@ -212,6 +212,7 @@ table_columns=[
     TableColumn(field="freq", title="FREQUENCY"),
     TableColumn(field="time", title="TIME"),
     TableColumn(field="obs", title="OBSERVATION"),
+    TableColumn(field="user", title="USERNAME"),
     TableColumn(field="comments", title="COMMENTS"),
 ]
 SELECTION_TABLE = DataTable(source=selected_plot_source, columns=table_columns,width=900,height=600,
@@ -541,9 +542,11 @@ def source_data(dataframe,dataframe1):
         time = []
         obs = []
         comments=[]
+        user=[]
         for num,item in enumerate(selected_tags):
             name.append(selected_plot["JNAME"].iloc[num])
             comments.append(selected_plot["COMMENTS"].iloc[num])
+            user.append(selected_plot["USER"].iloc[num])
             if not item == "Unclassified":
                 tmp = item.split(";")
                 for item1 in tmp:
@@ -567,7 +570,7 @@ def source_data(dataframe,dataframe1):
 
         selected_plot_source.data = dict(jname=name,profile=profile,pol=pol,
                                          freq=freq,time=time,obs=obs,
-                                         comments=comments)
+                                         comments=comments,user=user)
 
     if len(selected_plot_source.selected.indices) > 0:
         psrname = selected_plot_source.data["jname"][selected_plot_source.selected.indices[0]]

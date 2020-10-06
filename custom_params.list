@@ -1,9 +1,9 @@
 #This contains paths to text files containing custom measurements of various pulsar parameters using MeerTime data. 
 
 #Paths
-rm_file = /DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/rm.list
-dm_file = /DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/dm.list
-w50_file = /DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/w50.list
-w10_file = /DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/w10.list
-scatter_file = /DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/scatter.list
-category_file = /DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/category.list
+rm_file = /Users/aparthas/Documents/Projects/DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/rm.list
+dm_file = /Users/aparthas/Documents/Projects/DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/dm.list
+w50_file = /Users/aparthas/Documents/Projects/DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/w50.list
+w10_file = /Users/aparthas/Documents/Projects/DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/w10.list
+scatter_file = /Users/aparthas/Documents/Projects/DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/scatter.list
+category_file = /Users/aparthas/Documents/Projects/DockerShared/MeerTime/TPA/TPA_Classifier/measured_parameters/category_mjk_simon_patrick.list
